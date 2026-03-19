@@ -2,7 +2,7 @@ export default {
     questId: "clockwork-crypt",
     name: "III: The Clockwork Crypt",
     description: "The Bastion's gates are sealed by a massive mechanical lock. You must descend into the Clockwork Crypt and retrieve the Clockwork Heart to power the mechanism.",
-    turnLimit: 60,
+    turnLimit: 20,
     playerStart: { x: 3, y: 0 },
     rooms: [
         {

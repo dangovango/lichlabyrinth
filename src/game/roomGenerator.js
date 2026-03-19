@@ -3,6 +3,7 @@
 import enemyTypes from '../data/enemies.js';
 import { getRandomPosition } from '../utils/helpers.js';
 import { DEFAULT_LOOT_TABLE } from '../data/lootTables.js';
+import { soundManager } from '../utils/audio.js';
 
 let treasureIdCounter = 0;
 
@@ -118,6 +119,18 @@ export function spawnWanderingMonster(gameState) {
     };
 
     currentRoom.enemies.push(newEnemy);
+    
+    // Add visual and audio feedback
+    if (!gameState.visualEffects) gameState.visualEffects = [];
+    gameState.visualEffects.push({ 
+        type: 'enemySpawn', 
+        targetId: newEnemy.id, 
+        amount: newEnemy.emoji, 
+        position: { ...newEnemy.position },
+        startTime: Date.now() 
+    });
+    soundManager.playSpawn();
+
     return newEnemy;
 }
 

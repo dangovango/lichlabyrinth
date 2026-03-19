@@ -2,7 +2,7 @@ export default {
     questId: "labyrinth-of-lost",
     name: "II: Labyrinth of the Lost",
     description: "The Amulet guides you to a shifting maze. Somewhere within this labyrinth lies the Gate Key, the only object that can grant entry to the Lich's Bastion.",
-    turnLimit: 75,
+    turnLimit: 30,
     playerStart: { x: 3, y: 0 },
     rooms: [
         {

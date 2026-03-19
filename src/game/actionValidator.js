@@ -48,6 +48,11 @@ export function canExit(gameState) {
     // --- SHARED RULE: Locked doors block all interactions ---
     if (doorAtPlayer.isLocked) return false;
 
+    // --- CASE 0: Fake Door ---
+    if (doorAtPlayer.isFake) {
+        return true;
+    }
+
     // --- CASE 1: Standard Transition Door ---
     if (doorAtPlayer.leadsTo) {
         return true;

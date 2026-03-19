@@ -174,6 +174,77 @@ class SoundManager {
         });
     }
 
+    playLatch() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        
+        // 1. High metallic click
+        const osc1 = this.ctx.createOscillator();
+        const gain1 = this.ctx.createGain();
+        osc1.type = 'square';
+        osc1.frequency.setValueAtTime(1200, now);
+        osc1.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+        gain1.gain.setValueAtTime(0.1, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        osc1.connect(gain1);
+        gain1.connect(this.ctx.destination);
+        
+        // 2. Low mechanical thud
+        const osc2 = this.ctx.createOscillator();
+        const gain2 = this.ctx.createGain();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(150, now + 0.02);
+        osc2.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+        gain2.gain.setValueAtTime(0.2, now + 0.02);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc2.connect(gain2);
+        gain2.connect(this.ctx.destination);
+
+        osc1.start(now);
+        osc1.stop(now + 0.05);
+        osc2.start(now + 0.02);
+        osc2.stop(now + 0.15);
+    }
+
+    playSpawn() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.3);
+        
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    }
+
+    playDeath() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.4);
+        
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+    }
+
     // --- Ambient Music ---
 
     startAmbientMusic() {

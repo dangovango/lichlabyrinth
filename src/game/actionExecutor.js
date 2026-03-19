@@ -5,6 +5,7 @@ import { treasureTypes, applyTrap } from '../data/treasures.js';
 import { advanceToNextRoom, checkAllWinConditionsMet } from './questManager.js';
 import { ACTION_COSTS } from './gameState.js';
 import { savePlayerData } from '../utils/persistence.js';
+import { soundManager } from '../utils/audio.js';
 
 function createVisualEffect(type, targetId, amount = null, position = null) {
     return { type, targetId, amount, position, startTime: Date.now() };
@@ -117,6 +118,14 @@ function handleTriggers(gameState, triggerIds) {
 
     if (anyChange) {
         gameState.message += " You hear mechanisms shifting in the walls.";
+        soundManager.playLatch();
+        
+        // Find doors in the current room that just changed and add a flash effect
+        currentRoom.doors.forEach(door => {
+            const dx = door.position ? door.position.x : door.x;
+            const dy = door.position ? door.position.y : door.y;
+            gameState.visualEffects.push(createVisualEffect('doorUnlock', door.id, null, { x: dx, y: dy }));
+        });
     }
 }
 
@@ -141,6 +150,8 @@ export function executeFight(gameState) {
 
     if (enemy.hp <= 0) {
         newGameState.message += ` The ${enemy.name} is defeated!`;
+        newGameState.visualEffects.push(createVisualEffect('enemyDeath', enemy.id, enemy.emoji, { ...enemy.position }));
+        soundManager.playDeath();
 
         // --- TRACK PROGRESS ---
         if (!newGameState.quest.progress.defeatedEnemies) {
@@ -301,6 +312,28 @@ export function executeExit(gameState) {
     if (doorAtPlayer.isLocked) {
         const newGameState = JSON.parse(JSON.stringify(gameState));
         newGameState.message = "The door is locked securely.";
+        return newGameState;
+    }
+
+    // --- CASE 0: Fake Door ---
+    if (doorAtPlayer.isFake) {
+        soundManager.playLatch();
+        const newGameState = JSON.parse(JSON.stringify(gameState));
+        newGameState.message = doorAtPlayer.customMessage || "The door is just a clever imitation. It leads nowhere.";
+        
+        if (doorAtPlayer.trapDamage) {
+            player.hp -= doorAtPlayer.trapDamage;
+            newGameState.player.hp = player.hp;
+            newGameState.message += ` It was booby-trapped! You take ${doorAtPlayer.trapDamage} damage.`;
+            newGameState.visualEffects.push(createVisualEffect('damageNumber', player.id, `-${doorAtPlayer.trapDamage}`, player.position));
+            newGameState.visualEffects.push(createVisualEffect('flash', player.id));
+
+            if (newGameState.player.hp <= 0) {
+                newGameState.player.hp = 0;
+                newGameState.gameStatus = "lost";
+                newGameState.message += " The trap was fatal.";
+            }
+        }
         return newGameState;
     }
 

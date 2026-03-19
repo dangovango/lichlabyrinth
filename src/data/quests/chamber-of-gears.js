@@ -10,10 +10,14 @@ export default {
             name: "The Entry Hall",
             coords: { x: 0, y: 0 },
             flavorText: "Dust falls from the ceiling as massive gears grind behind the stone walls.",
-            enemySpawns: [{ type: "skeleton", count: 2 }],
-            treasures: [{ type: "gold", count: 1 }],
+            walls: [], 
+            enemySpawns: [
+                { type: "skeleton", count: 1, position: { x: 1, y: 5 } },
+                { type: "skeleton", count: 1, position: { x: 5, y: 1 } }
+            ],
+            treasures: [{ type: "gold", count: 1, position: { x: 5, y: 5 } }],
             puzzleObjects: [
-                { id: "switch-A", type: "switch", position: { x: 1, y: 1 } }
+                { id: "switch-A", type: "switch", position: { x: 2, y: 2 }, triggers: ["gear-exit"] }
             ],
             doors: [
                 { x: 3, y: 0 }, // Exfiltration Door
@@ -26,10 +30,11 @@ export default {
             name: "The Gear Pit",
             coords: { x: -1, y: 0 },
             flavorText: "The smell of ancient grease fills the air. A massive vertical shaft drops into darkness.",
-            enemySpawns: [{ type: "orc", count: 1 }],
-            treasures: [{ type: "weapon", count: 1 }],
+            walls: [], 
+            enemySpawns: [{ type: "orc", count: 1, position: { x: 1, y: 1 } }],
+            treasures: [{ type: "weapon", count: 1, position: { x: 1, y: 5 } }],
             puzzleObjects: [
-                { id: "switch-B", type: "switch", position: { x: 5, y: 5 } }
+                { id: "switch-B", type: "switch", position: { x: 4, y: 4 }, triggers: ["gear-exit"] }
             ],
             doors: [
                 { x: 6, y: 3, leadsTo: "gear-room-1" } // East back to Entry Hall
@@ -40,12 +45,14 @@ export default {
             name: "The Victory Vault",
             coords: { x: 1, y: 0 },
             flavorText: "The air here is still and cool. Golden light reflects off piles of ancient coins.",
+            walls: [], // Correct placement
             enemySpawns: [],
             treasures: [{ type: "gold", count: 5 }],
             doors: [
                 { x: 0, y: 3, leadsTo: "gear-room-1" }
             ]
         }
+
     ],
     winConditions: {
         reachRoom: { required: true, roomId: "victory-vault" },

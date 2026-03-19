@@ -2,7 +2,7 @@ export default {
     questId: "trial-of-plates",
     name: "The Trial of the Plates",
     description: "An ancient mechanism blocks the path. Solve the puzzle to reach the vault, and return to the start to prove your worth.",
-    turnLimit: 25,
+    turnLimit: 12,
     playerStart: { x: 3, y: 0 },
     rooms: [
         {

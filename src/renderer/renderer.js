@@ -105,8 +105,8 @@ export class Renderer {
         this.drawRoom(gameState.currentRoom, gameState);
         this.drawTreasures(gameState.currentRoom.treasures);
         this.drawNPCs(gameState.currentRoom.npcs);
-        this.drawEnemies(gameState.currentRoom.enemies, settings);
-        this.drawPlayer(gameState.player, gameState); // Pass gameState to drawPlayer
+        this.drawEnemies(gameState.currentRoom.enemies, settings, gameState.visualEffects);
+        this.drawPlayer(gameState.player, gameState); 
         
         if (settings.showHealthBars) {
             this.drawPlayerHealthBar(gameState.player);
@@ -465,9 +465,17 @@ export class Renderer {
         this.roundRect(barX + 1, barY + 1, fillWidth, barHeight - 2, 1);
     }
 
-    drawEnemies(enemies, settings) {
+    drawEnemies(enemies, settings, visualEffects) {
         const enemyEmojis = { goblin: '👹', ghost: '👻', orc: '🐷', dragon: '🐉', skeleton: '💀', lich: '🧙‍♂️' };
         enemies.forEach(enemy => {
+            // Hide enemy if they are currently undergoing a spawn or death animation
+            if (visualEffects) {
+                const isAnimating = visualEffects.some(ef => 
+                    ef.targetId === enemy.id && (ef.type === 'enemySpawn' || ef.type === 'enemyDeath')
+                );
+                if (isAnimating) return;
+            }
+
             const vE = this.visualEntities[enemy.id] || enemy.position;
             const type = enemy.id.split('-')[0];
             const screenX = vE.x * this.cellSize - this.camera.x;
@@ -617,6 +625,9 @@ export class Renderer {
                 if (enemy) {
                     targetPosition = this.visualEntities[enemy.id] || enemy.position;
                     if (effect.type === 'damageNumber') this.triggerShake(6);
+                } else if (effect.position) {
+                    // Fallback for entities that have already been removed (like dead enemies)
+                    targetPosition = effect.position;
                 }
             }
 
@@ -686,6 +697,35 @@ export class Renderer {
                 } else if (effect.type === 'flash') {
                     this.ctx.fillStyle = `rgba(255, 0, 0, ${fade * 0.5})`;
                     this.roundRect(screenX + 2, screenY + 2, this.cellSize - 4, this.cellSize - 4, 5);
+                } else if (effect.type === 'doorUnlock') {
+                    // Draw a glowing pulse around the door
+                    const pulse = this.getPulseScale(0.02, 0.2);
+                    const grad = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, this.cellSize * pulse);
+                    grad.addColorStop(0, `rgba(255, 215, 0, ${fade * 0.8})`);
+                    grad.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                    this.ctx.fillStyle = grad;
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, this.cellSize * pulse, 0, Math.PI * 2);
+                    this.ctx.fill();
+                } else if (effect.type === 'enemySpawn') {
+                    // Growing and fading in
+                    this.ctx.save();
+                    this.ctx.translate(centerX, centerY);
+                    this.ctx.globalAlpha = fade;
+                    const scale = progress * 1.5;
+                    this.ctx.scale(scale, scale);
+                    this.drawEmojiAtOrigin(effect.amount); // amount holds the emoji
+                    this.ctx.restore();
+                } else if (effect.type === 'enemyDeath') {
+                    // Shrinking, rotating and fading out
+                    this.ctx.save();
+                    this.ctx.translate(centerX, centerY);
+                    this.ctx.globalAlpha = fade;
+                    this.ctx.rotate(progress * Math.PI * 2);
+                    const scale = 1 - progress;
+                    this.ctx.scale(scale, scale);
+                    this.drawEmojiAtOrigin(effect.amount); // amount holds the emoji
+                    this.ctx.restore();
                 }
             }
         });

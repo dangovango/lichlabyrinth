@@ -433,6 +433,9 @@ export default function QuestEditor() {
       leadsTo: doorData.leadsTo,
       isLocked: doorData.isLocked,
       isExit: doorData.isExit,
+      isFake: doorData.isFake,
+      trapDamage: doorData.trapDamage,
+      customMessage: doorData.customMessage,
       requires: doorData.requires || []
     };
 
@@ -978,6 +981,9 @@ function DoorModal({ door, rooms, currentRoom, onSave, onClose }) {
   const [leadsTo, setLeadsTo] = useState(door?.leadsTo || '');
   const [isLocked, setIsLocked] = useState(door?.isLocked || false);
   const [isExit, setIsExit] = useState(door?.isExit || false);
+  const [isFake, setIsFake] = useState(door?.isFake || false);
+  const [trapDamage, setTrapDamage] = useState(door?.trapDamage || 0);
+  const [customMessage, setCustomMessage] = useState(door?.customMessage || '');
   const [requires, setRequires] = useState(door?.requires || []);
 
   // Gather all potential triggers from the entire dungeon
@@ -1002,16 +1008,16 @@ function DoorModal({ door, rooms, currentRoom, onSave, onClose }) {
 
   // Auto-detect neighbor if no leadsTo is set yet
   useMemo(() => {
-    if (!leadsTo && neighbor && !isExit) {
+    if (!leadsTo && neighbor && !isExit && !isFake) {
         setLeadsTo(neighbor.roomId);
     }
-  }, [neighbor, leadsTo, isExit]);
+  }, [neighbor, leadsTo, isExit, isFake]);
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 border-2 border-gray-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <h2 className="text-2xl font-black text-orange-400 mb-6 flex items-center gap-2"><Edit3 /> Door Config</h2>
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Door ID (Required for puzzles)</label>
             <input type="text" value={id} onChange={e => setId(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-orange-500 transition" />
@@ -1021,7 +1027,10 @@ function DoorModal({ door, rooms, currentRoom, onSave, onClose }) {
             <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition ${isExit ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-500'}`}>
               <input type="checkbox" checked={isExit} onChange={e => {
                   setIsExit(e.target.checked);
-                  if (e.target.checked) setLeadsTo('');
+                  if (e.target.checked) {
+                      setLeadsTo('');
+                      setIsFake(false);
+                  }
               }} className="w-5 h-5 accent-orange-500" />
               <div className="flex flex-col">
                 <span className="font-black text-sm uppercase">Quest Exit</span>
@@ -1037,29 +1046,60 @@ function DoorModal({ door, rooms, currentRoom, onSave, onClose }) {
               </div>
             </label>
           </div>
+
+          <div className="border-t border-gray-700 pt-4">
+            <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition ${isFake ? 'bg-purple-500/20 border-purple-500 text-purple-400' : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-500'}`}>
+              <input type="checkbox" checked={isFake} onChange={e => {
+                  setIsFake(e.target.checked);
+                  if (e.target.checked) {
+                      setLeadsTo('');
+                      setIsExit(false);
+                  }
+              }} className="w-5 h-5 accent-purple-500" />
+              <div className="flex flex-col">
+                <span className="font-black text-sm uppercase">Fake / Trapped</span>
+                <span className="text-[10px] leading-tight">A misleading puzzle door.</span>
+              </div>
+            </label>
+          </div>
+
+          {isFake && (
+            <div className="space-y-4 bg-purple-900/10 p-4 rounded-xl border border-purple-500/30">
+              <div>
+                <label className="block text-xs font-bold text-purple-400 uppercase mb-2">Trap Damage (0 = no damage)</label>
+                <input type="number" value={trapDamage} onChange={e => setTrapDamage(parseInt(e.target.value) || 0)} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-purple-500 transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-purple-400 uppercase mb-2">Custom Interaction Message</label>
+                <textarea value={customMessage} onChange={e => setCustomMessage(e.target.value)} placeholder="e.g. It's just a wall painted to look like a door!" rows="2" className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-purple-500 transition text-sm" />
+              </div>
+            </div>
+          )}
           
-          <div className={isExit ? 'opacity-30 pointer-events-none' : ''}>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Destination Room</label>
-            <div className="relative">
-              <select 
-                value={leadsTo} 
-                onChange={e => setLeadsTo(e.target.value)}
-                disabled={isExit}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-orange-500 transition appearance-none"
-              >
-                <option value="">Select Room...</option>
-                {rooms.map(r => (
-                  <option key={r.roomId} value={r.roomId}>{r.name} ({r.coords.x}, {r.coords.y})</option>
-                ))}
-              </select>
+          {!isFake && (
+            <div className={isExit ? 'opacity-30 pointer-events-none' : ''}>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Destination Room</label>
+              <div className="relative">
+                <select 
+                  value={leadsTo} 
+                  onChange={e => setLeadsTo(e.target.value)}
+                  disabled={isExit}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-orange-500 transition appearance-none"
+                >
+                  <option value="">Select Room...</option>
+                  {rooms.map(r => (
+                    <option key={r.roomId} value={r.roomId}>{r.name} ({r.coords.x}, {r.coords.y})</option>
+                  ))}
+                </select>
+                {neighbor && !isExit && (
+                  <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-lg">SPATIAL MATCH!</div>
+                )}
+              </div>
               {neighbor && !isExit && (
-                <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-lg">SPATIAL MATCH!</div>
+                <p className="text-[10px] text-blue-400 mt-2 italic flex items-center gap-1"><CheckCircle2 size={12} /> Detected room "{neighbor.name}" at ({neighbor.coords.x}, {neighbor.coords.y})</p>
               )}
             </div>
-            {neighbor && !isExit && (
-              <p className="text-[10px] text-blue-400 mt-2 italic flex items-center gap-1"><CheckCircle2 size={12} /> Detected room "{neighbor.name}" at ({neighbor.coords.x}, {neighbor.coords.y})</p>
-            )}
-          </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Unlocking Requirements</label>
@@ -1092,7 +1132,7 @@ function DoorModal({ door, rooms, currentRoom, onSave, onClose }) {
             )}
           </div>
           <div className="flex gap-3 pt-4">
-            <button onClick={() => onSave({ id, leadsTo, isLocked, isExit, requires })} className="flex-1 bg-orange-500 hover:bg-orange-400 text-black font-black py-3 rounded-xl transition shadow-lg">SAVE CONFIG</button>
+            <button onClick={() => onSave({ id, leadsTo, isLocked, isExit, isFake, trapDamage, customMessage, requires })} className="flex-1 bg-orange-500 hover:bg-orange-400 text-black font-black py-3 rounded-xl transition shadow-lg">SAVE CONFIG</button>
             <button onClick={onClose} className="px-6 bg-gray-700 hover:bg-gray-600 font-bold py-3 rounded-xl transition">CANCEL</button>
           </div>
         </div>
