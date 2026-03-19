@@ -3,6 +3,7 @@ import HomeScreen from './ui-screens/HomeScreen.jsx';
 import IntroductionScreen from './ui-screens/IntroductionScreen.jsx';
 import QuestNumberScreen from './ui-screens/QuestNumberScreen.jsx';
 import GameOverScreen from '../GameOverScreen.jsx';
+import questsData from './data/quests/index.js';
 
 // Import game logic from the new controller
 import { startGame as coreGameStart, gameState as coreGameState, handleGoHome as coreHandleGoHome, setupInputListeners as coreSetupInputListeners } from './game/gameController.js';
@@ -194,6 +195,24 @@ const RootComponent = () => {
     }
   }, [currentScreen, selectedQuest, currentGameState]); // Depend on currentScreen, selectedQuest, and currentGameState to trigger logic correctly.
 
+  const getNextQuest = (currentQuest) => {
+    const quests = Object.values(questsData);
+    const currentIndex = quests.findIndex(q => q.questId === currentQuest.questId);
+    if (currentIndex !== -1 && currentIndex < quests.length - 1) {
+      return quests[currentIndex + 1];
+    }
+    return null;
+  };
+
+  const handleNextQuest = () => {
+    const nextQuest = getNextQuest(selectedQuest);
+    if (nextQuest) {
+      handleStartQuest(nextQuest);
+    } else {
+      handleGoHome();
+    }
+  };
+
   const renderSettingsMenu = () => (
     <div className="settings-overlay">
       <div className="settings-container">
@@ -330,7 +349,7 @@ const RootComponent = () => {
             <GameOverScreen 
               gameStatus={gameOverState.status}
               victoryMessage={gameOverState.message}
-              onRestart={handleStartQuest.bind(null, selectedQuest)} // Pass current quest for restart
+              onRestart={gameOverState.status === 'won' ? handleNextQuest : handleStartQuest.bind(null, selectedQuest)}
               onGoHome={handleGoHome}
             />
           )}

@@ -14,8 +14,8 @@ const quests = {
     "forsaken-bastion": forsakenBastion,
     "lich-kings-sanctum": lichKingsSanctum,
     "trial-of-plates": trialOfPlates,
-    "dragon-hoard": dragonHoard,
-    "quest-4": chamberOfGears
+    "quest-4": chamberOfGears,
+    "dragon-hoard": dragonHoard
 };
 
 export default quests;

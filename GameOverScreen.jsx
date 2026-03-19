@@ -37,18 +37,17 @@ const GameOverScreen = ({ gameStatus, onRestart, onGoHome, victoryMessage }) => 
         <div style={styles.buttonContainer}>
           <button onClick={onRestart} style={{
             ...styles.button,
-            background: isWin 
+            background: isWin
               ? 'radial-gradient(circle, #4caf50 0%, #1b3a1b 100%)'
               : 'radial-gradient(circle, #ff6d00 0%, #bf360c 100%)',
             borderColor: isWin ? '#8f8' : '#ffd700'
           }}>
-            Try Again
+            {isWin ? 'Next Quest' : 'Try Again'}
           </button>
           <button onClick={onGoHome} style={styles.secondaryButton}>
             Return Home
           </button>
-        </div>
-      </div>
+        </div>      </div>
     </div>
   );
 };
