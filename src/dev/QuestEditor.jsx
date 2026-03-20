@@ -90,10 +90,15 @@ export default function QuestEditor() {
           // Absolute navigation check
           const { x, y } = r.coords;
           let targetCoords = { x, y };
-          if (door.position.y === 0) targetCoords.y -= 1;
-          else if (door.position.y === 6) targetCoords.y += 1;
-          else if (door.position.x === 0) targetCoords.x -= 1;
-          else if (door.position.x === 6) targetCoords.x += 1;
+          
+          // Use door.position if available, otherwise door.x/y
+          const dx = door.position ? door.position.x : door.x;
+          const dy = door.position ? door.position.y : door.y;
+
+          if (dy === 0) targetCoords.y -= 1;
+          else if (dy === 6) targetCoords.y += 1;
+          else if (dx === 0) targetCoords.x -= 1;
+          else if (dx === 6) targetCoords.x += 1;
 
           const neighbor = rooms.find(nb => nb.coords.x === targetCoords.x && nb.coords.y === targetCoords.y);
           if (neighbor && !reachableRooms.has(neighbor.roomId)) {
@@ -116,14 +121,18 @@ export default function QuestEditor() {
 
         const { x, y } = r.coords;
         let targetCoords = { x, y };
-        if (door.position.y === 0) targetCoords.y -= 1;
-        else if (door.position.y === 6) targetCoords.y += 1;
-        else if (door.position.x === 0) targetCoords.x -= 1;
-        else if (door.position.x === 6) targetCoords.x += 1;
+
+        const dx = door.position ? door.position.x : door.x;
+        const dy = door.position ? door.position.y : door.y;
+
+        if (dy === 0) targetCoords.y -= 1;
+        else if (dy === 6) targetCoords.y += 1;
+        else if (dx === 0) targetCoords.x -= 1;
+        else if (dx === 6) targetCoords.x += 1;
 
         const neighbor = rooms.find(nb => nb.coords.x === targetCoords.x && nb.coords.y === targetCoords.y);
         if (!neighbor && door.leadsTo) {
-          warnings.push({ type: 'deadend', message: `Door in "${r.name}" at (${door.position.x},${door.position.y}) leads to empty space (${targetCoords.x},${targetCoords.y}).`, id: r.roomId });
+          warnings.push({ type: 'deadend', message: `Door in "${r.name}" at (${dx},${dy}) leads to empty space (${targetCoords.x},${targetCoords.y}).`, id: r.roomId });
         }
       });
     });
@@ -141,7 +150,7 @@ export default function QuestEditor() {
 
   // --- Difficulty Evaluation Logic ---
   const evaluation = useMemo(() => {
-    if (turnLimit <= 0) return null;
+    if (turnLimit <= 0 || !rooms.length) return null;
 
     // 1. Estimate Travel Turns
     // We'll use BFS to find the longest path from start (index 0)
@@ -157,10 +166,14 @@ export default function QuestEditor() {
       r.doors.forEach(door => {
         const { x, y } = r.coords;
         let targetCoords = { x, y };
-        if (door.position.y === 0) targetCoords.y -= 1;
-        else if (door.position.y === 6) targetCoords.y += 1;
-        else if (door.position.x === 0) targetCoords.x -= 1;
-        else if (door.position.x === 6) targetCoords.x += 1;
+
+        const dx = door.position ? door.position.x : door.x;
+        const dy = door.position ? door.position.y : door.y;
+
+        if (dy === 0) targetCoords.y -= 1;
+        else if (dy === 6) targetCoords.y += 1;
+        else if (dx === 0) targetCoords.x -= 1;
+        else if (dx === 6) targetCoords.x += 1;
 
         const neighbor = rooms.find(nb => nb.coords.x === targetCoords.x && nb.coords.y === targetCoords.y);
         if (neighbor && distances[neighbor.roomId] === undefined) {
@@ -583,7 +596,27 @@ export default function QuestEditor() {
         setRooms(quest.rooms.map(r => ({
           ...createEmptyRoom(r.roomId, r.name),
           ...r,
-          layout: { ...createEmptyRoom().layout, walls: r.walls || [] }
+          layout: { ...createEmptyRoom().layout, walls: r.walls || [] },
+          // Normalize doors: handle both {x,y} and {position:{x,y}}
+          doors: (r.doors || []).map(d => ({
+            ...d,
+            position: d.position || { x: d.x, y: d.y }
+          })),
+          // Normalize enemies
+          enemies: (r.enemies || []).map(e => ({
+            ...e,
+            position: e.position || { x: e.x, y: e.y }
+          })),
+          // Normalize treasures
+          treasures: (r.treasures || []).map(t => ({
+            ...t,
+            position: t.position || { x: t.x, y: t.y }
+          })),
+          // Normalize NPCs
+          npcs: (r.npcs || []).map(n => ({
+            ...n,
+            position: n.position || { x: n.x, y: n.y }
+          }))
         })));
         if (quest.playerStart) setStartPosition(quest.playerStart);
         setCurrentRoomIndex(0);
