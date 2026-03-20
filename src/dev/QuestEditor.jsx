@@ -489,6 +489,7 @@ export default function QuestEditor() {
       item.name = data.name;
       item.id = data.id;
       item.message = data.message;
+      item.reward = data.reward;
     }
     setRooms(newRooms);
     setEditingStoryItem(null);
@@ -1173,12 +1174,17 @@ function StoryItemModal({ item, onSave, onClose, onDelete }) {
   const [name, setName] = useState(item?.name || 'Mysterious Note');
   const [id, setId] = useState(item?.id || `story-item-${Date.now()}`);
   const [message, setMessage] = useState(item?.message || 'You found a scrap of paper with ancient writing.');
+  const [reward, setReward] = useState(item?.reward || { attack: 0, maxHp: 0, apTotal: 0 });
+
+  const updateReward = (key, value) => {
+    setReward({ ...reward, [key]: parseInt(value) || 0 });
+  };
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 border-2 border-gray-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <h2 className="text-2xl font-black text-orange-400 mb-6 flex items-center gap-2">📜 Story Item</h2>
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Item Name (Display)</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-orange-500 transition" />
@@ -1191,8 +1197,27 @@ function StoryItemModal({ item, onSave, onClose, onDelete }) {
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Narrative Message (On Pickup)</label>
             <textarea value={message} onChange={e => setMessage(e.target.value)} rows="3" className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-orange-500 transition" />
           </div>
+
+          <div className="border-t border-gray-700 pt-4">
+            <h3 className="text-xs font-bold text-gray-500 uppercase mb-4 tracking-widest">Rewards (Optional)</h3>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Attack</label>
+                <input type="number" value={reward.attack} onChange={e => updateReward('attack', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Max HP</label>
+                <input type="number" value={reward.maxHp} onChange={e => updateReward('maxHp', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Max AP</label>
+                <input type="number" value={reward.apTotal} onChange={e => updateReward('apTotal', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-3 pt-4">
-            <button onClick={() => onSave({ name, id, message })} className="flex-1 bg-orange-500 hover:bg-orange-400 text-black font-black py-3 rounded-xl transition">SAVE</button>
+            <button onClick={() => onSave({ name, id, message, reward })} className="flex-1 bg-orange-500 hover:bg-orange-400 text-black font-black py-3 rounded-xl transition">SAVE</button>
             <button onClick={onDelete} className="bg-red-600 hover:bg-red-500 px-4 py-3 rounded-xl transition"><Trash2 size={20} /></button>
             <button onClick={onClose} className="px-6 bg-gray-700 hover:bg-gray-600 font-bold py-3 rounded-xl transition">CANCEL</button>
           </div>

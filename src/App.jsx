@@ -239,6 +239,18 @@ const RootComponent = () => {
         </div>
 
         <div className="settings-section">
+          <h3>CONTROLS</h3>
+          <div className="controls-grid">
+            <div className="control-row"><span>Move</span> <span className="key-cap">WASD / ARROWS</span></div>
+            <div className="control-row"><span>Action</span> <span className="key-cap">SPACE / ENTER</span></div>
+            <div className="control-row"><span>Fight</span> <span className="key-cap">F</span></div>
+            <div className="control-row"><span>Talk</span> <span className="key-cap">T</span></div>
+            <div className="control-row"><span>Search</span> <span className="key-cap">E</span></div>
+            <div className="control-row"><span>Exit</span> <span className="key-cap">X</span></div>
+          </div>
+        </div>
+
+        <div className="settings-section">
           <h3>VISUALS</h3>
           <div className="setting-item">
             <span>Show Health Bars</span>
@@ -326,6 +338,9 @@ const RootComponent = () => {
 
         <div id="primary-action-section">
           <button id="action-button" className="primary-action-btn">Action</button>
+          <div className="control-hint">
+            Press <span className="key-cap">Space Bar</span> or <span className="key-cap">Enter</span>
+          </div>
         </div>
       </div>
     </>

@@ -353,7 +353,7 @@ export class Renderer {
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 this.ctx.fillText('🔒', centerX, centerY);
-            } else if (door.isExit || (!door.leadsTo && gameState?.quest?.winConditions?.exfiltrate?.required)) {
+            } else if (door.isExit || (!door.leadsTo && !door.isFake && gameState?.quest?.winConditions?.exfiltrate?.required)) {
                 // This is an EXFILTRATION / EXIT door
                 const isReadyToExit = checkAllObjectivesExceptExfil(gameState);
                 const pulse = isReadyToExit ? this.getPulseScale(0.01, 0.2) : 1.0;

@@ -48,15 +48,64 @@ export const treasureTypes = {
         name: "Key Item",
         apply: (player, treasure) => {
             player.inventory.push({ id: treasure.id, name: treasure.name });
-            return { message: treasure.message || `You found the ${treasure.name}!`, heal: 0 };
+            let msg = treasure.message || `You found the ${treasure.name}!`;
+            let heal = 0;
+            let powerUp = null;
+
+            // Apply optional rewards
+            if (treasure.reward) {
+                if (treasure.reward.attack) {
+                    player.attack += treasure.reward.attack;
+                    msg += ` Attack +${treasure.reward.attack}!`;
+                    powerUp = 'weapon';
+                }
+                if (treasure.reward.maxHp) {
+                    player.maxHp += treasure.reward.maxHp;
+                    player.hp += treasure.reward.maxHp;
+                    msg += ` Max HP +${treasure.reward.maxHp}!`;
+                    heal = treasure.reward.maxHp;
+                    powerUp = 'hp_upgrade';
+                }
+                if (treasure.reward.apTotal) {
+                    player.stats.apTotal = (player.stats.apTotal || 6) + treasure.reward.apTotal;
+                    msg += ` Max Actions +${treasure.reward.apTotal}!`;
+                    powerUp = 'energy_upgrade';
+                }
+            }
+
+            return { message: msg, heal, powerUp };
         }
     },
     "story-item": {
         name: "Story Item",
         apply: (player, treasure) => {
             player.inventory.push({ id: treasure.id, name: treasure.name });
-            const msg = treasure.message || `You found the ${treasure.name}.`;
-            return { message: msg, heal: 0 };
+            let msg = treasure.message || `You found the ${treasure.name}.`;
+            let heal = 0;
+            let powerUp = null;
+
+            // Apply optional rewards
+            if (treasure.reward) {
+                if (treasure.reward.attack) {
+                    player.attack += treasure.reward.attack;
+                    msg += ` Attack +${treasure.reward.attack}!`;
+                    powerUp = 'weapon';
+                }
+                if (treasure.reward.maxHp) {
+                    player.maxHp += treasure.reward.maxHp;
+                    player.hp += treasure.reward.maxHp;
+                    msg += ` Max HP +${treasure.reward.maxHp}!`;
+                    heal = treasure.reward.maxHp;
+                    powerUp = 'hp_upgrade';
+                }
+                if (treasure.reward.apTotal) {
+                    player.stats.apTotal = (player.stats.apTotal || 6) + treasure.reward.apTotal;
+                    msg += ` Max Actions +${treasure.reward.apTotal}!`;
+                    powerUp = 'energy_upgrade';
+                }
+            }
+
+            return { message: msg, heal, powerUp };
         }
     }
 };

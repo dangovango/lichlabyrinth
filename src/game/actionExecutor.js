@@ -245,6 +245,12 @@ export function executeSearch(gameState) {
         if (treasure.type === 'trap' || Math.random() < 0.10) {
             const trapResult = applyTrap(player);
             newGameState.message = trapResult.message;
+            
+            // If it was supposed to be a mission-critical item, reassure the player
+            if (treasure.type === 'key-item' || treasure.type === 'story-item') {
+                newGameState.message += " It was a trap! Keep searching!";
+            }
+
             newGameState.visualEffects.push(createVisualEffect('damageNumber', player.id, `-${trapResult.damage}`, player.position));
             newGameState.visualEffects.push(createVisualEffect('flash', player.id));
 
@@ -266,8 +272,9 @@ export function executeSearch(gameState) {
                 }
 
                 // NEW: Trigger a grand 'powerUp' effect for permanent upgrades
-                if (treasure.type === 'weapon' || treasure.type === 'energy_upgrade' || treasure.type === 'hp_upgrade') {
-                    newGameState.visualEffects.push(createVisualEffect('powerUp', player.id, treasure.type, player.position));
+                const powerUpType = result.powerUp || (['weapon', 'energy_upgrade', 'hp_upgrade'].includes(treasure.type) ? treasure.type : null);
+                if (powerUpType) {
+                    newGameState.visualEffects.push(createVisualEffect('powerUp', player.id, powerUpType, player.position));
                 }
             } else {
                 newGameState.message = `You found a mysterious ${treasure.type}, but it seems to have no effect.`;
