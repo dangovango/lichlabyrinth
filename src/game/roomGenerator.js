@@ -22,20 +22,28 @@ export function generateRoom(roomDef, player) {
 
     // Support both spawn definitions (enemySpawns) and pre-placed objects (enemies)
     let enemies = [];
-    if (roomDef.enemySpawns && roomDef.enemySpawns.length > 0) {
-        enemies = placeEnemies(roomDef.enemySpawns, layout, occupiedSpaces);
-    } else if (roomDef.enemies && roomDef.enemies.length > 0) {
-        // If they are already placed (from editor), just use them but ensure IDs and state
-        enemies = roomDef.enemies.map((e, idx) => ({
-            ...enemyTypes[e.type],
-            ...e,
-            id: e.id || `${e.type}-custom-${idx}-${Date.now()}`,
-            hp: e.hp !== undefined ? e.hp : enemyTypes[e.type].hp,
-            maxHp: e.maxHp !== undefined ? e.maxHp : enemyTypes[e.type].hp,
-            turnOrder: e.turnOrder || Math.random()
-        }));
-        // Add their positions to occupied spaces
-        enemies.forEach(e => occupiedSpaces.push(e.position));
+    const rawEnemies = roomDef.enemySpawns || roomDef.enemies || [];
+    if (rawEnemies.length > 0) {
+        // If they look like spawn definitions (have 'count' or MISSING 'position'), use placeEnemies
+        const looksLikeSpawn = rawEnemies.some(e => e.count !== undefined || !e.position);
+        
+        if (looksLikeSpawn) {
+            enemies = placeEnemies(rawEnemies, layout, occupiedSpaces);
+        } else {
+            // If they are already placed (from editor), just use them but ensure IDs and state
+            enemies = rawEnemies.map((e, idx) => ({
+                ...enemyTypes[e.type],
+                ...e,
+                id: e.id || `${e.type}-custom-${idx}-${Date.now()}`,
+                hp: e.hp !== undefined ? e.hp : enemyTypes[e.type].hp,
+                maxHp: e.maxHp !== undefined ? e.maxHp : enemyTypes[e.type].hp,
+                turnOrder: e.turnOrder || Math.random()
+            }));
+            // Add their positions to occupied spaces
+            enemies.forEach(e => {
+                if (e.position) occupiedSpaces.push(e.position);
+            });
+        }
     }
 
     // Support both spawn definitions and pre-placed treasures

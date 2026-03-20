@@ -1,3 +1,25 @@
+# HeroQuest Development Session Log - March 19, 2026 (Quest Progression & Rewarding Narratives)
+
+## 1. Sequential Quest Flow & Progression
+- **"Next Quest" Integration**: Refactored the victory screen to replace the "Try Again" button with a "Next Quest" action, enabling a continuous gameplay experience.
+- **Automated Transition Logic**: Implemented `getNextQuest` logic in `App.jsx` that automatically identifies the player's current progress and loads the subsequent dungeon level upon victory.
+- **Quest Ordering**: Reorganized the quest data index to define a logical, sequential order (Quests I through V followed by bonus challenges).
+- **Home/Retry Balance**: Maintained "Try Again" functionality for defeats while adding a "Return Home" option for players who wish to manually re-select quests.
+
+## 2. Enhanced UI Accessibility & Controls
+- **On-Screen Control Hints**: Added a "Press Space Bar or Enter" instruction directly below the primary Action button to assist new players.
+- **Integrated Controls Reference**: Expanded the Settings menu with a dedicated "CONTROLS" section, providing a comprehensive mapping of WASD/Arrows, Action, Fight, Talk, Search, and Exit keys.
+- **Stylized Key Caps**: Introduced new CSS classes for "key cap" visuals, ensuring keyboard instructions match the game's retro-fantasy aesthetic.
+
+## 3. Rewarding Story Items & Mechanical Depth
+- **Hybrid Narrative Rewards**: Upgraded `story-item` and `key-item` types to support optional stat rewards. Finding a legendary item can now grant permanent bonuses to Attack, Max HP, or Max Actions (AP).
+- **Dynamic Visual Feedback**: Updated the search engine to trigger the "Grand Power-Up" animation (rays and scaling text) when a narrative item provides a mechanical boost.
+- **"Keep Searching" Intelligence**: Implemented a reassurance system for trapped mission items; if a player encounters a trap where an objective was expected, the message log now clarifies: "It was a trap! Keep searching!"
+- **Quest Editor 2.1**: Enhanced the `StoryItemModal` in the Quest Editor to allow designers to easily configure rewards for narrative items, with full persistence in the exported JSON data.
+
+## 4. Visual Polish & Deception
+- **Fake Door Stealth**: Refactored the renderer to ensure "Fake/Trapped" doors are visually indistinguishable from standard transition doors, maintaining the dungeon's element of surprise.
+
 # HeroQuest Development Session Log - March 17, 2026 (Atmospheric Immersion & UI Accessibility)
 
 ## 1. Atmospheric Audio & Seamless Immersion

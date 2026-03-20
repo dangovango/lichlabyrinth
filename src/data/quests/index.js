@@ -6,6 +6,7 @@ import lichKingsSanctum from './lich-kings-sanctum.js';
 import dragonHoard from './dragon-hoard.js';
 import trialOfPlates from './trial-of-plates.js';
 import chamberOfGears from './chamber-of-gears.js';
+import kingsSecret from './kings-secret.json';
 
 const quests = {
     "cursed-catacombs": cursedCatacombs,
@@ -15,7 +16,8 @@ const quests = {
     "lich-kings-sanctum": lichKingsSanctum,
     "trial-of-plates": trialOfPlates,
     "quest-4": chamberOfGears,
-    "dragon-hoard": dragonHoard
+    "dragon-hoard": dragonHoard,
+    "kings-secret": kingsSecret
 };
 
 export default quests;

@@ -176,18 +176,32 @@ export default function QuestEditor() {
     const travelTurns = Math.ceil((maxPathLength * avgSquaresPerRoom * travelMultiplier) / 6);
 
     // 2. Estimate Combat Turns
-    // 6 AP per turn, Fight costs 2 AP. Assume average 2 attacks to kill an enemy.
+    // 1 AP per fight. Assume average 2 attacks to kill an enemy.
     let totalEnemyHP = 0;
     rooms.forEach(r => r.enemies.forEach(e => totalEnemyHP += e.hp));
-    const combatTurns = Math.ceil((totalEnemyHP / 2) * (2 / 6)); // Rough estimate
+    const combatTurns = Math.ceil((totalEnemyHP / 2) * (1 / 6)); // Updated to 1 AP
 
-    // 3. Estimate Search Turns
-    // Search costs 2 AP.
-    let totalTreasures = 0;
-    rooms.forEach(r => totalTreasures += r.treasures.length);
-    const searchTurns = Math.ceil((totalTreasures * 2) / 6);
+    // 3. Estimate Interaction Turns (Search & NPCs)
+    // Both Search and Talk cost 1 AP.
+    let totalInteractions = 0;
+    rooms.forEach(r => {
+      // Each treasure/story item is 1 interaction
+      totalInteractions += r.treasures.length;
+      
+      // Each NPC dialogue line is 1 interaction
+      if (r.npcs) {
+        r.npcs.forEach(npc => {
+          if (Array.isArray(npc.dialogue)) {
+            totalInteractions += npc.dialogue.length;
+          } else {
+            totalInteractions += 1;
+          }
+        });
+      }
+    });
+    const interactionTurns = Math.ceil((totalInteractions * 1) / 6); // Updated to 1 AP
 
-    const expectedTurns = travelTurns + combatTurns + searchTurns;
+    const expectedTurns = travelTurns + combatTurns + interactionTurns;
     const ratio = turnLimit / expectedTurns;
 
     let grade = 'S';
@@ -200,7 +214,7 @@ export default function QuestEditor() {
     else if (ratio < 1.5) { grade = 'B'; color = 'text-green-400'; label = 'Balanced'; }
     else if (ratio < 2.0) { grade = 'A'; color = 'text-blue-400'; label = 'Generous'; }
 
-    return { travelTurns, combatTurns, searchTurns, expectedTurns, grade, color, label, ratio };
+    return { travelTurns, combatTurns, interactionTurns, expectedTurns, grade, color, label, ratio };
   }, [rooms, turnLimit, winConditions.exfiltrate.required]);
 
   function createEmptyRoom(id, name) {
@@ -925,10 +939,9 @@ export default function QuestEditor() {
                     <span className="text-white font-black">{evaluation.combatTurns} Turns</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-gray-500 font-bold uppercase">Looting Est.</span>
-                    <span className="text-white font-black">{evaluation.searchTurns} Turns</span>
-                  </div>
-                  <div className="border-t border-gray-700 pt-3 flex justify-between text-xs">
+                   <span className="text-gray-500 font-bold uppercase">Interaction Est.</span>
+                   <span className="text-white font-black">{evaluation.interactionTurns} Turns</span>
+                  </div>                  <div className="border-t border-gray-700 pt-3 flex justify-between text-xs">
                     <span className="text-orange-400 font-bold uppercase text-[10px]">Expected Total</span>
                     <span className="text-white font-black underline decoration-orange-500">{evaluation.expectedTurns} / {turnLimit}</span>
                   </div>
