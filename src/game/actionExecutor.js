@@ -1,5 +1,5 @@
 // src/game/actionExecutor.js
-import { getAdjacentEnemies } from './actionValidator.js';
+import { getAdjacentEnemies, getAdjacentNPCs } from './actionValidator.js';
 import { findNextStep } from '../utils/helpers.js';
 import { treasureTypes, applyTrap } from '../data/treasures.js';
 import { advanceToNextRoom, checkAllWinConditionsMet } from './questManager.js';
@@ -20,6 +20,23 @@ export function executeMove(gameState, dx, dy) {
     newGameState.turn.ap -= ACTION_COSTS.MOVE;
     newGameState.turn.squaresMovedThisTurn += 1;
     newGameState.message = `You move.`;
+
+    // Update discovery (Fog of War)
+    const discoveryRadius = 2;
+    for (let dy = -discoveryRadius; dy <= discoveryRadius; dy++) {
+        for (let dx = -discoveryRadius; dx <= discoveryRadius; dx++) {
+            const tx = newGameState.player.position.x + dx;
+            const ty = newGameState.player.position.y + dy;
+            if (tx >= 0 && tx < newGameState.currentRoom.layout.width && ty >= 0 && ty < newGameState.currentRoom.layout.height) {
+                // Check if already discovered
+                const alreadyDiscovered = newGameState.currentRoom.discovered.some(p => p.x === tx && p.y === ty);
+                if (!alreadyDiscovered) {
+                    newGameState.currentRoom.discovered.push({ x: tx, y: ty });
+                    console.log(`Discovered tile: (${tx}, ${ty})`);
+                }
+            }
+        }
+    }
 
     // Check for puzzle objects (plates and switches)
     if (newGameState.currentRoom.puzzleObjects) {
@@ -204,30 +221,87 @@ export function executeInteract(gameState) {
 
     newGameState.turn.ap -= ACTION_COSTS.SEARCH; // Re-use search cost for social interaction
 
+    let dialogueText = "";
     if (Array.isArray(npc.dialogue)) {
         if (npc.currentLineIndex === undefined) npc.currentLineIndex = 0;
-
-        newGameState.message = `${npc.name}: "${npc.dialogue[npc.currentLineIndex]}"`;
-
+        dialogueText = npc.dialogue[npc.currentLineIndex];
         // Cycle to next line for next interaction
         npc.currentLineIndex = (npc.currentLineIndex + 1) % npc.dialogue.length;
     } else {
-        newGameState.message = `${npc.name}: "${npc.dialogue}"`;
+        dialogueText = npc.dialogue;
     }
 
-    return newGameState;
+    newGameState.message = `${npc.name}: "${dialogueText}"`;
+
+    // --- NPC REWARD LOGIC ---
+    if (npc.reward && !npc.hasGivenReward) {
+        let rewardMsg = "";
+        let visualType = null;
+
+        // Stat Boosts
+        if (npc.reward.attack) {
+            player.attack += npc.reward.attack;
+            rewardMsg += ` Attack +${npc.reward.attack}!`;
+            visualType = 'powerUp';
+        }
+        if (npc.reward.maxHp) {
+            player.maxHp += npc.reward.maxHp;
+            player.hp += npc.reward.maxHp; // Heal the amount gained
+            rewardMsg += ` Max HP +${npc.reward.maxHp}!`;
+            visualType = 'hp_upgrade';
+        }
+        if (npc.reward.apTotal) {
+            player.stats.apTotal = (player.stats.apTotal || 6) + npc.reward.apTotal;
+            rewardMsg += ` Max AP +${npc.reward.apTotal}!`;
+            visualType = 'energy_upgrade';
+        }
+
+        // New Mechanics
+        if (npc.reward.addTurns) {
+            if (newGameState.quest.turnLimit) {
+                newGameState.quest.turnLimit += npc.reward.addTurns;
+                rewardMsg += ` Time Extended +${npc.reward.addTurns} turns!`;
+                visualType = 'powerUp'; // Generic good effect
+            }
+        }
+        if (npc.reward.unlockRoom) {
+            let unlockedCount = 0;
+            currentRoom.doors.forEach(d => {
+                if (d.isLocked) {
+                    d.isLocked = false;
+                    unlockedCount++;
+                    // Add unlock visual at door location
+                    const dx = d.position ? d.position.x : d.x;
+                    const dy = d.position ? d.position.y : d.y;
+                    newGameState.visualEffects.push({
+                        type: 'doorUnlock',
+                        targetId: d.id || `door-${dx}-${dy}`,
+                        position: { x: dx, y: dy },
+                        startTime: Date.now()
+                    });
+                }
+            });
+            if (unlockedCount > 0) rewardMsg += " Doors Unlocked!";
+        }
+
+        if (rewardMsg) {
+            newGameState.message += ` [REWARD:${rewardMsg}]`;
+            npc.hasGivenReward = true;
+            
+            // Trigger the main visual effect on the player
+            if (visualType) {
+                 newGameState.visualEffects.push({
+                    type: 'powerUp',
+                    targetId: player.id,
+                    amount: visualType === 'hp_upgrade' || visualType === 'energy_upgrade' ? visualType : 'generic',
+                    startTime: Date.now()
+                });
+            }
+        }
+    }
+return newGameState;
 }
 
-
-export function getAdjacentNPCs(gameState) {
-    const { player, currentRoom } = gameState;
-    if (!currentRoom.npcs) return [];
-    return currentRoom.npcs.filter(npc => {
-        const dx = Math.abs(player.position.x - npc.position.x);
-        const dy = Math.abs(player.position.y - npc.position.y);
-        return (dx <= 1 && dy <= 1) && (dx !== 0 || dy !== 0);
-    });
-}
 
 export function executeSearch(gameState) {
     let newGameState = JSON.parse(JSON.stringify(gameState));
@@ -295,7 +369,7 @@ export function executeSearch(gameState) {
 
 export function executeExit(gameState) {
     const { player, currentRoom, quest } = gameState;
-    if (currentRoom.enemies.length > 0) {
+    if (currentRoom.enemies.filter(e => e.hp > 0).length > 0) {
         const newGameState = JSON.parse(JSON.stringify(gameState));
         newGameState.message = "You cannot exit while enemies are present.";
         return newGameState;

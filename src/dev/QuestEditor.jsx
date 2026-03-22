@@ -457,7 +457,7 @@ export default function QuestEditor() {
     const doorObj = {
       id: doorData.id,
       position: editingDoor,
-      leadsTo: doorData.leadsTo,
+      leadsTo: doorData.isExit || doorData.isFake ? '' : doorData.leadsTo,
       isLocked: doorData.isLocked,
       isExit: doorData.isExit,
       isFake: doorData.isFake,
@@ -530,6 +530,7 @@ export default function QuestEditor() {
       npc.emoji = data.emoji;
       // Convert multi-line string to array of strings for the game engine
       npc.dialogue = data.dialogue.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      npc.reward = data.reward;
     }
     setRooms(newRooms);
     setEditingNPC(null);
@@ -593,31 +594,34 @@ export default function QuestEditor() {
             });
         }
 
-        setRooms(quest.rooms.map(r => ({
-          ...createEmptyRoom(r.roomId, r.name),
-          ...r,
-          layout: { ...createEmptyRoom().layout, walls: r.walls || [] },
-          // Normalize doors: handle both {x,y} and {position:{x,y}}
-          doors: (r.doors || []).map(d => ({
-            ...d,
-            position: d.position || { x: d.x, y: d.y }
-          })),
-          // Normalize enemies
-          enemies: (r.enemies || []).map(e => ({
-            ...e,
-            position: e.position || { x: e.x, y: e.y }
-          })),
-          // Normalize treasures
-          treasures: (r.treasures || []).map(t => ({
-            ...t,
-            position: t.position || { x: t.x, y: t.y }
-          })),
-          // Normalize NPCs
-          npcs: (r.npcs || []).map(n => ({
-            ...n,
-            position: n.position || { x: n.x, y: n.y }
-          }))
-        })));
+        setRooms(quest.rooms.map(r => {
+          const empty = createEmptyRoom(r.roomId, r.name);
+          return {
+            ...empty,
+            ...r,
+            layout: { ...empty.layout, walls: r.walls || [] },
+            // Normalize doors: handle both {x,y} and {position:{x,y}}
+            doors: (r.doors || []).map(d => ({
+              ...d,
+              position: d.position ? { x: d.position.x, y: d.position.y } : { x: d.x, y: d.y }
+            })),
+            // Normalize enemies
+            enemies: (r.enemies || []).map(e => ({
+              ...e,
+              position: e.position ? { x: e.position.x, y: e.position.y } : { x: e.x, y: e.y }
+            })),
+            // Normalize treasures
+            treasures: (r.treasures || []).map(t => ({
+              ...t,
+              position: t.position ? { x: t.position.x, y: t.position.y } : { x: t.x, y: t.y }
+            })),
+            // Normalize NPCs
+            npcs: (r.npcs || []).map(n => ({
+              ...n,
+              position: n.position ? { x: n.position.x, y: n.position.y } : { x: n.x, y: n.y }
+            }))
+          };
+        }));
         if (quest.playerStart) setStartPosition(quest.playerStart);
         setCurrentRoomIndex(0);
       } catch (err) { alert('Failed to parse JSON'); }
@@ -1005,10 +1009,10 @@ export default function QuestEditor() {
                       onClick={() => setCurrentRoomIndex(idx)}
                     >
                       <div className="flex-1 font-bold truncate">{room.name}</div>
+                      {room.doors?.some(d => d.isExit) && <span className="text-[10px]" title="Contains Exit Door">🏁</span>}
                       <div className={`text-[10px] font-black ml-2 ${isIsolated ? 'text-orange-500' : 'opacity-50'}`}>
                         ({room.coords.x},{room.coords.y})
-                      </div>
-                      {rooms.length > 1 && currentRoomIndex === idx && (
+                      </div>                      {rooms.length > 1 && currentRoomIndex === idx && (
                         <button onClick={(e) => { e.stopPropagation(); deleteRoom(); }} className="ml-2 p-1 hover:bg-red-600 rounded transition"><Trash2 size={14} /></button>
                       )}
                     </div>
@@ -1223,7 +1227,11 @@ function StoryItemModal({ item, onSave, onClose, onDelete }) {
   const [reward, setReward] = useState(item?.reward || { attack: 0, maxHp: 0, apTotal: 0 });
 
   const updateReward = (key, value) => {
-    setReward({ ...reward, [key]: parseInt(value) || 0 });
+    if (typeof value === 'boolean') {
+      setReward({ ...reward, [key]: value });
+    } else {
+      setReward({ ...reward, [key]: parseInt(value) || 0 });
+    }
   };
 
   return (
@@ -1259,6 +1267,16 @@ function StoryItemModal({ item, onSave, onClose, onDelete }) {
                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Max AP</label>
                 <input type="number" value={reward.apTotal} onChange={e => updateReward('apTotal', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
               </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Add Turns</label>
+                <input type="number" value={reward.addTurns} onChange={e => updateReward('addTurns', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+              <div className="flex items-end pb-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={reward.unlockRoom || false} onChange={e => updateReward('unlockRoom', e.target.checked)} className="accent-orange-500 w-4 h-4" />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Unlock Room</span>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -1279,12 +1297,21 @@ function NPCModal({ npc, onSave, onClose, onDelete }) {
   // Handle both string and array for backward compatibility
   const initialDialogue = Array.isArray(npc?.dialogue) ? npc.dialogue.join('\n') : (npc?.dialogue || 'Safe travels, adventurer!');
   const [dialogue, setDialogue] = useState(initialDialogue);
+  const [reward, setReward] = useState(npc?.reward || { attack: 0, maxHp: 0, apTotal: 0 });
+
+  const updateReward = (key, value) => {
+    if (typeof value === 'boolean') {
+      setReward({ ...reward, [key]: value });
+    } else {
+      setReward({ ...reward, [key]: parseInt(value) || 0 });
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 border-2 border-gray-700 rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <h2 className="text-2xl font-black text-orange-400 mb-6 flex items-center gap-2">👤 NPC Config</h2>
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto max-h-[80vh] pr-2">
           <div className="grid grid-cols-4 gap-4">
             <div className="col-span-1">
               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Emoji</label>
@@ -1297,11 +1324,40 @@ function NPCModal({ npc, onSave, onClose, onDelete }) {
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Dialogue / Message</label>
-            <textarea value={dialogue} onChange={e => setDialogue(e.target.value)} rows="6" className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-orange-500 transition" />
+            <textarea value={dialogue} onChange={e => setDialogue(e.target.value)} rows="4" className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white outline-none focus:border-orange-500 transition" />
             <p className="text-[10px] text-gray-500 mt-2 italic">Pro-tip: Each new line will be a separate dialogue box when the player interacts with the NPC in-game.</p>
           </div>
+
+          <div className="border-t border-gray-700 pt-4">
+            <h3 className="text-xs font-bold text-gray-500 uppercase mb-4 tracking-widest">Rewards (Optional)</h3>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Attack</label>
+                <input type="number" value={reward.attack} onChange={e => updateReward('attack', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Max HP</label>
+                <input type="number" value={reward.maxHp} onChange={e => updateReward('maxHp', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Max AP</label>
+                <input type="number" value={reward.apTotal} onChange={e => updateReward('apTotal', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Add Turns</label>
+                <input type="number" value={reward.addTurns} onChange={e => updateReward('addTurns', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+              <div className="flex items-end pb-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={reward.unlockRoom || false} onChange={e => updateReward('unlockRoom', e.target.checked)} className="accent-orange-500 w-4 h-4" />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Unlock Room</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-3 pt-4">
-            <button onClick={() => onSave({ name, emoji, dialogue })} className="flex-1 bg-orange-500 hover:bg-orange-400 text-black font-black py-3 rounded-xl transition shadow-lg">SAVE CONFIG</button>
+            <button onClick={() => onSave({ name, emoji, dialogue, reward })} className="flex-1 bg-orange-500 hover:bg-orange-400 text-black font-black py-3 rounded-xl transition shadow-lg">SAVE CONFIG</button>
             <button onClick={onDelete} className="bg-red-600 hover:bg-red-500 px-4 py-3 rounded-xl transition"><Trash2 size={20} /></button>
             <button onClick={onClose} className="px-6 bg-gray-700 hover:bg-gray-600 font-bold py-3 rounded-xl transition">CANCEL</button>
           </div>

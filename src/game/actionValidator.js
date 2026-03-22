@@ -1,6 +1,5 @@
 // src/game/actionValidator.js
 import { ACTION_COSTS } from './gameState.js';
-import { getAdjacentNPCs } from './actionExecutor.js';
 
 export function canMove(gameState) {
     const { player, turn } = gameState;
@@ -31,12 +30,18 @@ export function canInteract(gameState) {
 
 export function canExit(gameState) {
     const { player, currentRoom, quest } = gameState;
-    if (currentRoom.enemies.length > 0) {
+    if (!currentRoom) return false;
+    
+    // HIGH-VISIBILITY DEBUG LOG
+    const livingEnemies = (currentRoom.enemies || []).filter(e => e.hp > 0);
+    const doors = currentRoom.doors || (currentRoom.layout && currentRoom.layout.doors) || [];
+    
+    if (livingEnemies.length > 0) {
+        console.warn(`[EXIT_BLOCKED] Room: ${currentRoom.name} | Enemies:`, livingEnemies.map(e => e.name));
         return false;
     }
     
     // Find the door exactly at the player's position
-    const doors = currentRoom.doors || currentRoom.layout.doors || [];
     const doorAtPlayer = doors.find(d => {
         const dx = d.position ? d.position.x : d.x;
         const dy = d.position ? d.position.y : d.y;
@@ -97,13 +102,34 @@ export function canExit(gameState) {
     return false;
 }
 
-// Helper function, not a primary validation
 export function getAdjacentEnemies(gameState) {
     const { player, currentRoom } = gameState;
-    return currentRoom.enemies.filter(enemy => {
-        const dx = Math.abs(player.position.x - enemy.position.x);
-        const dy = Math.abs(player.position.y - enemy.position.y);
+    if (!currentRoom || !currentRoom.enemies) return [];
+    
+    const adjacent = currentRoom.enemies.filter(enemy => {
+        if (enemy.hp <= 0) return false;
+        const ex = enemy.position ? enemy.position.x : -1;
+        const ey = enemy.position ? enemy.position.y : -1;
+        const dx = Math.abs(player.position.x - ex);
+        const dy = Math.abs(player.position.y - ey);
         return dx <= 1 && dy <= 1 && (dx !== 0 || dy !== 0);
+    });
+
+    if (adjacent.length > 0) {
+        console.warn("Adjacent enemies detected:", adjacent.map(e => `${e.name} at (${e.position.x},${e.position.y})`));
+    }
+    
+    return adjacent;
+}
+
+// Helper function to find adjacent NPCs
+export function getAdjacentNPCs(gameState) {
+    const { player, currentRoom } = gameState;
+    if (!currentRoom.npcs) return [];
+    return currentRoom.npcs.filter(npc => {
+        const dx = Math.abs(player.position.x - npc.position.x);
+        const dy = Math.abs(player.position.y - npc.position.y);
+        return (dx <= 1 && dy <= 1) && (dx !== 0 || dy !== 0);
     });
 }
 
@@ -119,7 +145,7 @@ export function isPathBlocked(gameState, dx, dy) {
     if (isWall) {
         return "You can't move through a wall.";
     }
-    const isEnemy = currentRoom.enemies.some(enemy => enemy.position.x === targetX && enemy.position.y === targetY);
+    const isEnemy = currentRoom.enemies.some(enemy => enemy.hp > 0 && enemy.position.x === targetX && enemy.position.y === targetY);
     if (isEnemy) {
         return "An enemy blocks your path.";
     }

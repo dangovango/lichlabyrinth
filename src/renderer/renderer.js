@@ -470,18 +470,22 @@ export class Renderer {
         enemies.forEach(enemy => {
             // Hide enemy if they are currently undergoing a spawn or death animation
             if (visualEffects) {
+                const now = Date.now();
                 const isAnimating = visualEffects.some(ef => 
-                    ef.targetId === enemy.id && (ef.type === 'enemySpawn' || ef.type === 'enemyDeath')
+                    ef.targetId === enemy.id && 
+                    (ef.type === 'enemySpawn' || ef.type === 'enemyDeath') &&
+                    (now - (ef.startTime || now) < 1200)
                 );
                 if (isAnimating) return;
             }
-
             const vE = this.visualEntities[enemy.id] || enemy.position;
             const type = enemy.id.split('-')[0];
             const screenX = vE.x * this.cellSize - this.camera.x;
             const screenY = vE.y * this.cellSize - this.camera.y;
 
-            this.drawEmoji(enemy.emoji || enemyEmojis[type] || '❓', vE);
+            const emoji = enemy.emoji || enemyEmojis[type] || '❓';
+            console.warn(`[RENDER] Drawing ${enemy.name} (${emoji}) at screen (${Math.round(screenX)}, ${Math.round(screenY)})`);
+            this.drawEmoji(emoji, vE);
 
             if (settings.showHealthBars) {
                 const barWidth = this.cellSize * 0.6;

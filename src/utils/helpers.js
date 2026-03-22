@@ -6,8 +6,8 @@ export function getRandomPosition(layout, occupiedSpaces = []) {
     const MAX_ATTEMPTS = 50;
 
     while (attempts < MAX_ATTEMPTS) {
-        const x = Math.floor(Math.random() * layout.width);
-        const y = Math.floor(Math.random() * layout.height);
+        const x = Math.max(0, Math.min(layout.width - 1, Math.floor(Math.random() * layout.width)));
+        const y = Math.max(0, Math.min(layout.height - 1, Math.floor(Math.random() * layout.height)));
         
         const isOccupied = occupiedSpaces.some(p => p.x === x && p.y === y);
         const isDoor = layout.doors.some(d => d.x === x && d.y === y);
@@ -21,7 +21,7 @@ export function getRandomPosition(layout, occupiedSpaces = []) {
 
     if (!position) {
         console.error("Failed to find a random unoccupied position.");
-        return { x: 1, y: 1 };
+        return { x: 3, y: 3 }; // Return center tile as safe fallback
     }
 
     return position;

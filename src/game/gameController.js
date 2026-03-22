@@ -2,8 +2,8 @@ import { getInitialState } from './gameState.js';
 import { Renderer } from '../renderer/renderer.js';
 import { UI } from '../renderer/ui.js';
 import { initializeFirstRoom } from './questManager.js';
-import { isPathBlocked, canFight, canSearch, canInteract, canExit, getAdjacentEnemies } from './actionValidator.js';
-import { executeMove, executeFight, executeSearch, executeExit, executeInteract, getAdjacentNPCs } from './actionExecutor.js';
+import { isPathBlocked, canFight, canSearch, canInteract, canExit, getAdjacentEnemies, getAdjacentNPCs } from './actionValidator.js';
+import { executeMove, executeFight, executeSearch, executeExit, executeInteract } from './actionExecutor.js';
 import { endPlayerTurn } from './turnResolver.js';
 import { soundManager } from '../utils/audio.js';
 
@@ -80,33 +80,49 @@ function gameLoop() {
             const atExit = canExit(gameState);
 
             const doors = gameState.currentRoom.doors || (gameState.currentRoom.layout && gameState.currentRoom.layout.doors) || [];
+            // Check if player is STANDING ON a door
+            const doorAtPlayer = doors.find(d => {
+                const dx = d.position ? d.position.x : d.x;
+                const dy = d.position ? d.position.y : d.y;
+                return dx === gameState.player.position.x && dy === gameState.player.position.y;
+            });
+            // Check if player is ADJACENT to a door
             const doorNearPlayer = doors.find(d => {
                 const dx = d.position ? d.position.x : d.x;
                 const dy = d.position ? d.position.y : d.y;
-                return (dx === gameState.player.position.x && dy === gameState.player.position.y) ||
-                       (Math.abs(dx - gameState.player.position.x) + Math.abs(dy - gameState.player.position.y) === 1);
+                return Math.abs(dx - gameState.player.position.x) + Math.abs(dy - gameState.player.position.y) === 1;
             });
 
             // --- Reprioritized Contextual Logic ---
+            const posStr = `Pos: (${gameState.player.position.x}, ${gameState.player.position.y})`;
+            
             if (adjacentEnemies.length > 0) {
                 actionButton.textContent = 'Fight';
-                actionButton.disabled = !canFight(gameState);
+                actionButton.disabled = false;
+                console.warn(`[ACTION] Fight available at ${posStr}`);
             } else if (hasTreasureAtPos) {
-                actionButton.textContent = 'Loot'; // More descriptive than 'Search'
-                actionButton.disabled = !canSearch(gameState);
+                actionButton.textContent = 'Loot';
+                actionButton.disabled = false;
             } else if (adjacentNPCs.length > 0) {
                 actionButton.textContent = 'Talk';
-                actionButton.disabled = !canInteract(gameState);
-            } else if (atExit) {
+                actionButton.disabled = false;
+            } else if (doorAtPlayer) {
                 actionButton.textContent = 'Exit';
-                actionButton.disabled = !canExit(gameState);
+                actionButton.disabled = false;
+                console.warn(`[ACTION] Exit available at ${posStr}`);
             } else if (doorNearPlayer && doorNearPlayer.isLocked) {
                 actionButton.textContent = 'Locked';
                 actionButton.disabled = true;
             } else {
                 actionButton.textContent = 'Search';
-                actionButton.disabled = !canSearch(gameState);
+                actionButton.disabled = false;
             }
+        }
+
+        // Cleanup old visual effects
+        if (gameState.visualEffects && gameState.visualEffects.length > 0) {
+            const now = Date.now();
+            gameState.visualEffects = gameState.visualEffects.filter(ef => (now - (ef.startTime || now)) < 1200);
         }
 
         renderer.draw(gameState);
@@ -121,18 +137,26 @@ function gameLoop() {
 function handleContextualAction() {
     if (!gameState || gameState.gameStatus !== 'playing') return;
 
-    const hasAdjacentEnemies = getAdjacentEnemies(gameState).length > 0;
-    const hasAdjacentNPCs = getAdjacentNPCs(gameState).length > 0;
+    const adjacentEnemies = getAdjacentEnemies(gameState);
+    const adjacentNPCs = getAdjacentNPCs(gameState);
     const hasTreasureAtPos = gameState.currentRoom.treasures.some(t => t.position.x === gameState.player.position.x && t.position.y === gameState.player.position.y);
     const atExit = canExit(gameState);
+    
+    const doors = gameState.currentRoom.doors || (gameState.currentRoom.layout && gameState.currentRoom.layout.doors) || [];
+    const doorNearPlayer = doors.find(d => {
+        const dx = d.position ? d.position.x : d.x;
+        const dy = d.position ? d.position.y : d.y;
+        return (dx === gameState.player.position.x && dy === gameState.player.position.y) ||
+               (Math.abs(dx - gameState.player.position.x) + Math.abs(dy - gameState.player.position.y) === 1);
+    });
 
-    if (hasAdjacentEnemies) {
+    if (adjacentEnemies.length > 0) {
         handleFight();
     } else if (hasTreasureAtPos) {
         handleSearch();
-    } else if (hasAdjacentNPCs) {
+    } else if (adjacentNPCs.length > 0) {
         handleTalk();
-    } else if (atExit) {
+    } else if (atExit || doorNearPlayer) {
         handleExit();
     } else {
         handleSearch();
@@ -257,7 +281,7 @@ function handleExit() {
         const newGameState = JSON.parse(JSON.stringify(gameState));
         if (doorAtPosition && doorAtPosition.isLocked) {
             newGameState.message = "The door is locked.";
-        } else if (currentRoom.enemies.length > 0) {
+        } else if (currentRoom.enemies.filter(e => e.hp > 0).length > 0) {
             newGameState.message = "You cannot exit while enemies are present!";
         } else if (!doorAtPosition) {
             newGameState.message = "You are not near a door.";
