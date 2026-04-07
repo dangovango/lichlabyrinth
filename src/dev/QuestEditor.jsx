@@ -537,24 +537,50 @@ export default function QuestEditor() {
   }
 
   function exportQuest() {
+    // Helper to clamp coordinates to 0-6
+    const clampPos = (pos) => ({
+      x: Math.max(0, Math.min(6, pos.x)),
+      y: Math.max(0, Math.min(6, pos.y))
+    });
+
     const quest = {
       questId,
       name: questName,
       description: questDescription,
       victoryMessage,
       turnLimit: turnLimit > 0 ? turnLimit : null,
-      playerStart: startPosition,
+      playerStart: clampPos(startPosition),
       rooms: rooms.map(r => ({
         roomId: r.roomId,
         name: r.name,
         coords: r.coords,
         flavorText: r.flavorText,
-        walls: r.layout.walls,
-        doors: r.doors,
-        enemies: r.enemies,
-        treasures: r.treasures,
-        npcs: r.npcs || [],
-        puzzleObjects: r.puzzleObjects
+        walls: r.layout.walls.map(w => clampPos(w)),
+        // Clean up doors: Clear leadsTo if Exit/Fake, and clamp position
+        doors: r.doors.map(d => ({
+          ...d,
+          position: clampPos(d.position),
+          leadsTo: (d.isExit || d.isFake) ? "" : d.leadsTo
+        })),
+        // Clamp Enemy Positions
+        enemies: r.enemies.map(e => ({
+          ...e,
+          position: clampPos(e.position)
+        })),
+        // Clamp Treasure Positions
+        treasures: r.treasures.map(t => ({
+          ...t,
+          position: clampPos(t.position)
+        })),
+        // Clamp NPC Positions
+        npcs: (r.npcs || []).map(n => ({
+          ...n,
+          position: clampPos(n.position)
+        })),
+        puzzleObjects: (r.puzzleObjects || []).map(p => ({
+          ...p,
+          position: clampPos(p.position)
+        }))
       })),
       winConditions: {
         ...winConditions,
@@ -596,30 +622,81 @@ export default function QuestEditor() {
 
         setRooms(quest.rooms.map(r => {
           const empty = createEmptyRoom(r.roomId, r.name);
+          
+          // 1. Resolve Walls and Doors first (Fixed obstacles)
+          const walls = (r.walls || r.layout?.walls || []).map(w => ({
+            x: Math.max(0, Math.min(6, w.x)),
+            y: Math.max(0, Math.min(6, w.y))
+          }));
+
+          const doors = (r.doors || []).map(d => ({
+            ...d,
+            position: {
+              x: Math.max(0, Math.min(6, d.position ? d.position.x : (d.x !== undefined ? d.x : 3))),
+              y: Math.max(0, Math.min(6, d.position ? d.position.y : (d.y !== undefined ? d.y : 0)))
+            },
+            leadsTo: (d.isExit || d.isFake) ? "" : d.leadsTo
+          }));
+
+          // 2. Track occupied tiles to avoid stacking legacy items
+          const occupied = new Set();
+          walls.forEach(w => occupied.add(`${w.x},${w.y}`));
+          doors.forEach(d => occupied.add(`${d.position.x},${d.position.y}`));
+
+          // 3. Helper to place items safely (using existing pos if available, else find free tile)
+          const getSafeImportPos = (entity) => {
+            const rawX = entity.position ? entity.position.x : (entity.x !== undefined ? entity.x : null);
+            const rawY = entity.position ? entity.position.y : (entity.y !== undefined ? entity.y : null);
+            
+            if (rawX !== null && rawY !== null) {
+              const pos = { x: Math.max(0, Math.min(6, rawX)), y: Math.max(0, Math.min(6, rawY)) };
+              occupied.add(`${pos.x},${pos.y}`);
+              return pos;
+            }
+
+            // Floating item: Find first empty floor tile
+            for (let y = 1; y < 6; y++) { // Avoid edges first
+              for (let x = 1; x < 6; x++) {
+                if (!occupied.has(`${x},${y}`)) {
+                  occupied.add(`${x},${y}`);
+                  return { x, y };
+                }
+              }
+            }
+            return { x: 3, y: 3 }; // Fallback to center
+          };
+
+          // 4. Normalize Entities with smart positioning
+          const enemies = (r.enemies || r.enemySpawns || []).map(e => ({
+            ...e,
+            position: getSafeImportPos(e)
+          }));
+
+          const treasures = (r.treasures || []).map(t => ({
+            ...t,
+            position: getSafeImportPos(t)
+          }));
+
+          const npcs = (r.npcs || []).map(n => ({
+            ...n,
+            position: getSafeImportPos(n)
+          }));
+
+          const puzzleObjects = (r.puzzleObjects || []).map(p => ({
+            ...p,
+            position: getSafeImportPos(p)
+          }));
+
           return {
             ...empty,
             ...r,
-            layout: { ...empty.layout, walls: r.walls || [] },
-            // Normalize doors: handle both {x,y} and {position:{x,y}}
-            doors: (r.doors || []).map(d => ({
-              ...d,
-              position: d.position ? { x: d.position.x, y: d.position.y } : { x: d.x, y: d.y }
-            })),
-            // Normalize enemies
-            enemies: (r.enemies || []).map(e => ({
-              ...e,
-              position: e.position ? { x: e.position.x, y: e.position.y } : { x: e.x, y: e.y }
-            })),
-            // Normalize treasures
-            treasures: (r.treasures || []).map(t => ({
-              ...t,
-              position: t.position ? { x: t.position.x, y: t.position.y } : { x: t.x, y: t.y }
-            })),
-            // Normalize NPCs
-            npcs: (r.npcs || []).map(n => ({
-              ...n,
-              position: n.position ? { x: n.position.x, y: n.position.y } : { x: n.x, y: n.y }
-            }))
+            coords: r.coords || { x: 0, y: 0 },
+            layout: { ...empty.layout, walls },
+            doors,
+            enemies,
+            treasures,
+            npcs,
+            puzzleObjects
           };
         }));
         if (quest.playerStart) setStartPosition(quest.playerStart);
