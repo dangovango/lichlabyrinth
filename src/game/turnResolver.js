@@ -23,13 +23,12 @@ function startPlayerTurn(gameState) {
     }
 
     const turnPrompt = " Your turn. What will you do?";
-    const limitPrompt = newGameState.quest.turnLimit ? ` (${newGameState.quest.turnLimit - newGameState.quest.turnsElapsed} turns left)` : "";
     
     // Only add prompt if it's not already there or if message is generic
     if (!newGameState.message || newGameState.message === "Enemy Turn...") {
-        newGameState.message = "Your turn. What will you do?" + limitPrompt;
+        newGameState.message = "Your turn. What will you do?";
     } else {
-        newGameState.message += turnPrompt + limitPrompt;
+        newGameState.message += turnPrompt;
     }
     
     return newGameState;

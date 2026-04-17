@@ -282,7 +282,7 @@ function handleExit() {
         if (doorAtPosition && doorAtPosition.isLocked) {
             newGameState.message = "The door is locked.";
         } else if (currentRoom.enemies.filter(e => e.hp > 0).length > 0) {
-            newGameState.message = "You cannot exit while enemies are present!";
+            newGameState.message = "The door is barred! You must defeat all enemies in the room before you can exit.";
         } else if (!doorAtPosition) {
             newGameState.message = "You are not near a door.";
         }

@@ -1,3 +1,27 @@
+# HeroQuest Development Session Log - March 20, 2026 (NPC Agency & Engine Robustness)
+
+## 1. Interactive NPC Rewards & Narrative Agency
+- **NPC Boon System**: Implemented a one-time reward system for social interactions. NPCs can now grant permanent stat boosts (Attack, Max HP, AP) or unique mechanical benefits upon interaction.
+- **New Reward Mechanics**: Introduced `addTurns` (extending the quest turn limit) and `unlockRoom` (instantaneous unlocking of all doors in the current room), providing fresh narrative archetypes like the "Guide" or "Locksmith."
+- **Interactive Consistency**: Integrated these new rewards into both the `StoryItemModal` and `NPCModal` in the Quest Editor, ensuring story-driven items and characters share a unified mechanical language.
+- **Visual Feedback & Flow**: Refactored `executeInteract` to handle multi-line dialogue cycling, reward-specific popups, and the "Grand Power-Up" animation for social rewards.
+
+## 2. Engine Stability & "Phantom" Entity Prevention
+- **Strict Boundary Lockdown**: Implemented forced 0-6 coordinate clamping in `roomGenerator.js`. This prevents "phantom" enemies and treasures from spawning at world coordinates, a bug that previously made them invisible while still allowing them to block room exits.
+- **Automated State Cleanup**: Integrated a visual effect cleanup routine into the main game loop. This ensures finished animations are purged from memory, resolving a critical bug where spawn animations would keep enemies invisible indefinitely.
+- **Safety Spawning Logic**: Refactored the room generator to ensure all fixed obstacles (Walls, Doors, NPCs) are registered before random placement occurs, eliminating overlapping entities.
+- **HP-Aware Navigation**: Updated all validation logic (`canExit`, `isPathBlocked`, `getAdjacentEnemies`) to strictly ignore defeated enemies (HP <= 0), ensuring "ghost" hitboxes don't block player progression.
+
+## 3. Quest Editor 3.0: Legacy Standardization
+- **Smart Import "Safe Placement"**: Developed an intelligent import algorithm that maps room obstacles first and then assigns legacy "floating" items (those without positions) to the first available empty floor tiles, preventing the (0,0) pileup bug.
+- **Automated Schema Upgrading**: The editor now automatically upgrades imported JSON files to the latest engine standards, ensuring properties like the `discovered` tiles array are initialized correctly.
+- **Exfiltration Guard**: Implemented mutually exclusive logic for `isExit` and `leadsTo` properties in the Editor UI, preventing room-to-room doors from accidentally inheriting quest-ending constraints.
+
+## 4. Advanced Campaign Content
+- **New Quest: "The King's Secret"**: Successfully implemented a sprawling castle-themed dungeon based on custom layout specifications.
+- **Complex Objectives**: The quest features a hidden "Secret Room" accessible only through the King's Wardrobe and requires players to retrieve a narrative-critical item before returning to the main keep gates.
+- **Targeted Debugging Overlay**: Introduced high-visibility console logging (`[DEBUG_STATE]` and `[EXIT_BLOCKED]`) to provide real-time telemetry on coordinate mapping and enemy presence.
+
 # HeroQuest Development Session Log - March 19, 2026 (Quest Progression & Rewarding Narratives)
 
 ## 1. Sequential Quest Flow & Progression

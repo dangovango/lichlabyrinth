@@ -183,6 +183,11 @@ export function executeFight(gameState) {
 
         newGameState.currentRoom.enemies = newGameState.currentRoom.enemies.filter(e => e.id !== enemy.id);
 
+        if (newGameState.currentRoom.enemies.length === 0) {
+            newGameState.message += " The room is clear! The exits are now unlocked.";
+            soundManager.playLatch();
+        }
+
         // Check for boss defeat win condition
         const winConditions = newGameState.quest.winConditions;
         if (winConditions && winConditions.defeatBoss && winConditions.defeatBoss.required) {
@@ -371,7 +376,7 @@ export function executeExit(gameState) {
     const { player, currentRoom, quest } = gameState;
     if (currentRoom.enemies.filter(e => e.hp > 0).length > 0) {
         const newGameState = JSON.parse(JSON.stringify(gameState));
-        newGameState.message = "You cannot exit while enemies are present.";
+        newGameState.message = "The door is barred! You must defeat all enemies in the room before you can exit.";
         return newGameState;
     }
 

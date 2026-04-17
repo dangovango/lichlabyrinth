@@ -14,6 +14,7 @@ export class UI {
         
         this.torchPanel = document.getElementById('torch-gauge-hud');
         this.torchFill = document.getElementById('torch-gauge-fill');
+        this.torchText = document.getElementById('torch-gauge-text');
         this.objectivesContent = document.getElementById('objectives-content');
         
         this.moveButtons = {
@@ -122,6 +123,10 @@ export class UI {
             const remainingTurns = Math.max(0, quest.turnLimit - quest.turnsElapsed);
             const percentage = (remainingTurns / quest.turnLimit) * 100;
             this.torchFill.style.width = `${percentage}%`;
+            
+            if (this.torchText) {
+                this.torchText.textContent = `${remainingTurns} turns remaining`;
+            }
         } else {
             this.torchPanel.style.display = 'none';
         }

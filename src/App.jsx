@@ -169,7 +169,7 @@ const RootComponent = () => {
       if (gameContainer) gameContainer.style.display = 'none';
     } else if (currentScreen === 'game-play') {
       if (questLoader) questLoader.style.display = 'none';
-      if (gameContainer) gameContainer.style.display = 'flex';
+      if (gameContainer) gameContainer.style.display = ''; // Let CSS control display (grid/flex)
 
       // Start game logic only when entering 'game-play' screen and a quest is selected
       // and it hasn't been started yet in this render cycle.
@@ -317,6 +317,7 @@ const RootComponent = () => {
           <canvas id="game-canvas"></canvas>
           <div id="torch-gauge-hud">
             <div id="torch-gauge-fill"></div>
+            <span id="torch-gauge-text"></span>
           </div>
           <div id="message-log-overlay">
             <p id="log-message">Preparing dungeon...</p>

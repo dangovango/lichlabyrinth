@@ -112,6 +112,10 @@ export function advanceToNextRoom(gameState, door) {
 
     newGameState.message = nextRoomDef.flavorText || `You have entered the ${newGameState.currentRoom.name}.`;
 
+    if (newGameState.currentRoom.enemies && newGameState.currentRoom.enemies.length > 0) {
+        newGameState.message += " Defeat all enemies to unlock the exits!";
+    }
+
     // Reset Action Points and visual effects for the new room
     newGameState.turn.ap = newGameState.turn.apTotal;
     newGameState.turn.squaresMovedThisTurn = 0;
