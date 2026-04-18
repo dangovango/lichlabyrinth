@@ -12,30 +12,259 @@ body {
     box-sizing: border-box;
 }
 
+#left-column { grid-area: left; }
+#center-column { grid-area: center; }
+#right-column { grid-area: right; }
+#movement-section { grid-area: movement; }
+#primary-action-section { grid-area: action; }
+
 #game-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-gap: 20px;
-    align-items: stretch;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    max-width: 1200px;
-    background-color: #1a1510;
-    border: 3px solid #8b4513;
-    border-image: linear-gradient(to bottom, #ffd700, #8b4513, #3e2723) 1;
-    padding: 20px;
-    border-radius: 4px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.5);
+    height: 100vh;
+    background-color: #0d0a08;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Mobile HUD */
+#mobile-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(26, 21, 16, 0.95);
+    padding: 10px 15px;
+    border-bottom: 2px solid #8b4513;
+    z-index: 100;
+    width: 100%;
     box-sizing: border-box;
 }
 
-/* Columns */
-#left-column, #center-column, #right-column {
+.hud-stat-group {
+    display: flex;
+    gap: 15px;
+}
+
+.hud-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.hud-icon {
+    font-size: 1.1rem;
+}
+
+#torch-gauge-container {
+    flex: 1;
+    max-width: 150px;
+    margin: 0 15px;
+}
+
+#torch-gauge-hud {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.hud-settings-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    color: #ffd700;
+}
+
+/* Main Game Area */
+#game-main-area {
+    flex: 1;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+#canvas-container {
+    position: relative;
+    width: 100%;
+    max-width: min(90vw, 70vh); /* Ensure it fits both orientations */
+    aspect-ratio: 1 / 1;
+    border: 3px solid #8b4513;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #000;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+
+#room-name {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+}
+
+#quest-name {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    opacity: 0.6;
+}
+
+/* Toast System */
+#toast-container {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    z-index: 200;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#log-message {
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 0.95rem;
+    text-align: center;
+    border: 1px solid #ffd700;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.toast-fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* Floating Objectives */
+#objectives-mini-trigger {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 45px;
+    height: 45px;
+    background: rgba(26, 21, 16, 0.9);
+    border: 2px solid #ffd700;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4rem;
+    z-index: 50;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+#objectives-panel {
+    position: absolute;
+    top: 65px;
+    right: 10px;
+    width: 250px;
+    background: rgba(26, 21, 16, 0.98);
+    border: 2px solid #8b4513;
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 51;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+
+#objectives-panel.mobile-hidden {
+    transform: translateX(120%) scale(0.9);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Floating Controls */
+.mobile-controls-row {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
     justify-content: space-between;
-    height: 100%;
-    gap: 20px;
-    min-width: 0; /* Prevents any column from pushing the grid wider than 1/3 */
+    align-items: flex-end;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 300;
+}
+
+#movement-section, #primary-action-section {
+    pointer-events: auto;
+}
+
+.move-btn, .primary-action-btn {
+    background: rgba(255, 109, 0, 0.15) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-color: rgba(255, 215, 0, 0.3) !important;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4) !important;
+}
+
+.move-btn:active, .primary-action-btn:active {
+    background: rgba(255, 109, 0, 0.4) !important;
+    transform: scale(0.92);
+}
+
+.desktop-only {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .desktop-only {
+        display: block;
+    }
+}
+
+/* Grid Override for Desktop */
+@media (min-width: 1024px) {
+    #game-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        grid-template-areas: 
+            "left center right"
+            "movement center action";
+        height: auto;
+        min-height: 80vh;
+        max-width: 1200px;
+        margin: auto;
+        padding: 40px;
+    }
+    
+    #mobile-hud {
+        grid-area: left;
+        flex-direction: column;
+        height: auto;
+        border: none;
+        background: none;
+    }
+
+    #game-main-area {
+        grid-area: center;
+    }
+    
+    .mobile-controls-row {
+        position: static;
+        display: contents;
+    }
 }
 
 #center-column {
@@ -462,16 +691,94 @@ h1, h2, .controls-title {
 /* Mobile Responsiveness */
 @media (max-width: 950px) {
     body {
-        padding: 10px;
+        padding: 5px;
         align-items: flex-start;
     }
 
     #game-container {
-        grid-template-columns: 1fr;
-        grid-gap: 20px;
-        padding: 15px;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas: 
+            "center center"
+            "movement action"
+            "left left"
+            "right right";
+        grid-gap: 12px;
+        padding: 10px;
+        width: 100%;
         max-width: 500px;
         margin: 0 auto;
+    }
+
+    /* Standard landscape or tablet (wider than 700px) OR explicit landscape */
+    @media (min-width: 600px) and (orientation: landscape), (min-width: 700px) {
+        #game-container {
+            grid-template-columns: 20% 60% 20%; /* Strict 20/60/20 ratio */
+            grid-template-areas: 
+                "left center right"
+                "movement center action";
+            max-width: 100%;
+            height: auto;
+            max-height: 98vh;
+            align-items: center;
+            grid-gap: 8px;
+        }
+
+        #center-column {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        #canvas-container {
+            max-height: 75vh;
+            width: 100%; /* Take full 60% column width */
+            max-width: 75vh; /* Keep it square */
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+        }
+
+        /* Smaller message log in landscape */
+        #message-log-overlay {
+            padding: 4px 8px;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        #log-message {
+            font-size: 0.8rem;
+            min-height: auto;
+        }
+
+        #left-column, #right-column {
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Smaller buttons in landscape to fit 20% width */
+        .move-btn {
+            width: clamp(40px, 10vw, 60px);
+            height: clamp(40px, 10vw, 60px);
+        }
+
+        .primary-action-btn {
+            width: clamp(70px, 18vw, 110px);
+            height: clamp(70px, 18vw, 110px);
+            font-size: clamp(0.8rem, 3vw, 1.1rem);
+        }
+
+        /* Compact panels in landscape */
+        #player-stats-panel, #objectives-panel {
+            padding: 6px;
+            border-width: 2px;
+        }
+
+        #stats-content p, .objective-item {
+            font-size: 0.7rem;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 
     #left-column, #center-column, #right-column {
@@ -482,39 +789,47 @@ h1, h2, .controls-title {
     }
 
     #center-column {
-        order: -1; /* Canvas at the top */
+        align-items: center;
+        text-align: center;
     }
 
     #player-stats-panel, #objectives-panel {
         width: 100%;
     }
 
-    #movement-section, #primary-action-section {
-        width: 100%;
+    #movement-section {
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: auto;
+    }
+
+    #primary-action-section {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
     }
 }
 
 @media (max-width: 768px) {
     #game-container {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
+        grid-gap: 15px;
         padding: 10px;
         border-width: 2px;
     }
-
-    /* Use flex ordering to reposition elements for mobile */
-    #center-column { order: 1; }
-    #player-stats-panel { order: 2; }
     
-    /* Create a controls row for D-pad and Action button */
-    #movement-section { order: 3; }
-    #primary-action-section { order: 4; }
-    #objectives-panel { order: 5; }
+    /* Ensure flex positioning within grid items remains centered on mobile */
+    #movement-section { 
+        display: flex;
+        justify-content: center;
+    }
+    
+    #primary-action-section { 
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+    }
 
     /* Make stats more compact on mobile */
     #stats-content {
@@ -531,14 +846,14 @@ h1, h2, .controls-title {
 
     /* Adjust button sizes for mobile */
     .move-btn {
-        width: 70px;
-        height: 70px;
+        width: clamp(50px, 15vw, 70px);
+        height: clamp(50px, 15vw, 70px);
     }
 
     .primary-action-btn {
-        width: 140px;
-        height: 140px;
-        font-size: 1.4rem;
+        width: clamp(100px, 30vw, 140px);
+        height: clamp(100px, 30vw, 140px);
+        font-size: clamp(1rem, 4vw, 1.4rem);
     }
 
     /* Objectives can be more compact */
@@ -566,19 +881,14 @@ h1, h2, .controls-title {
         font-size: 1.4rem;
     }
 
-    /* Side-by-side controls layout for small phones */
-    #movement-section, #primary-action-section {
-        padding: 0;
-    }
-
     #movement-controls {
         transform: scale(0.9);
     }
 
     .primary-action-btn {
-        width: 120px;
-        height: 120px;
-        font-size: 1.2rem;
+        width: 110px;
+        height: 110px;
+        font-size: 1.1rem;
     }
 }
 
