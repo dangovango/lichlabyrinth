@@ -91,3 +91,19 @@
 - **Energy Upgrade Unification**: Resolved a naming inconsistency between `movement_upgrade` and "Energy Upgrade."
 - **Standardized Key**: Globally renamed the treasure key to `energy_upgrade` across all data files, loot tables, game logic, and the Quest Editor.
 - **Improved Feedback**: Updated visual feedback upon collection to "ENERGY UP!", correctly reflecting the Action Point (AP) pool increase.
+
+# HeroQuest Development Session Log - April 17, 2026 (Mobile-First Overhaul)
+
+## 1. Mobile-First UI Transformation
+- **Unified Top HUD**: Replaced the side stats panel with a modern, semi-transparent top bar using high-contrast icons for HP, AP, and Gold.
+- **Ephemeral Toast System**: Implemented a non-intrusive notification system where messages fade out and slide up, clearing the game board for better visibility.
+- **Ergonomic "Thumb-Zone" Controls**: Refactored controls into floating, glass-morphism overlays positioned at the bottom corners for a handheld console experience.
+- **Collapsible Information**: Housed quest objectives in a toggleable floating drawer to maximize screen real estate on small devices.
+
+## 2. Visual Feedback & Immersion
+- **Move Ripple Effect**: Added a subtle radial pulse effect at the player's destination upon movement to provide satisfying visual haptics for touch input.
+- **Height-Aware Scaling**: Optimized the canvas to scale based on both width and height (using `min(90vw, 70vh)`), ensuring a perfect fit in both portrait and landscape orientations.
+
+## 3. Ergonomic Refinements
+- **Landscape Optimization**: Implemented a 20/60/20 grid ratio for landscape mode, pinning controls to the edges where thumbs naturally rest while centering the game board.
+- **Safe Area Support**: Integrated CSS `env(safe-area-inset-*)` to ensure UI elements aren't obscured by modern device notches or home indicators.

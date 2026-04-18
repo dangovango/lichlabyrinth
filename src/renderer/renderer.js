@@ -615,6 +615,16 @@ export class Renderer {
                     this.triggerShake(16);
                     this.ctx.fillStyle = `rgba(255, 255, 255, ${fade * 0.5})`;
                     this.ctx.fillRect(-100, -100, this.ctx.canvas.width + 200, this.ctx.canvas.height + 200);
+                } else if (effect.type === 'moveRipple') {
+                    const centerX = effect.position.x * this.cellSize + this.cellSize / 2 - this.camera.x;
+                    const centerY = effect.position.y * this.cellSize + this.cellSize / 2 - this.camera.y;
+                    const radius = (this.cellSize / 2) * progress * 2;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    this.ctx.strokeStyle = `rgba(255, 255, 255, ${fade * 0.4})`;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
                 } else if (effect.type === 'powerUp') {
                     let flashColor = '255, 215, 0'; // Default Gold
                     if (effect.amount === 'energy_upgrade') flashColor = '0, 229, 255';

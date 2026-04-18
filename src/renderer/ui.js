@@ -16,6 +16,8 @@ export class UI {
         this.torchFill = document.getElementById('torch-gauge-fill');
         this.torchText = document.getElementById('torch-gauge-text');
         this.objectivesContent = document.getElementById('objectives-content');
+        this.objectivesPanel = document.getElementById('objectives-panel');
+        this.objectivesTrigger = document.getElementById('objectives-mini-trigger');
         
         this.moveButtons = {
             up: document.getElementById('move-up'),
@@ -24,7 +26,26 @@ export class UI {
             right: document.getElementById('move-right'),
         };
 
+        this.messageTimeout = null;
         this.bindEvents();
+        this.setupMobileEvents();
+    }
+
+    setupMobileEvents() {
+        if (this.objectivesTrigger && this.objectivesPanel) {
+            this.objectivesTrigger.onclick = (e) => {
+                e.stopPropagation();
+                this.objectivesPanel.classList.toggle('mobile-hidden');
+            };
+
+            document.addEventListener('click', (e) => {
+                if (!this.objectivesPanel.classList.contains('mobile-hidden') && 
+                    !this.objectivesPanel.contains(e.target) && 
+                    e.target !== this.objectivesTrigger) {
+                    this.objectivesPanel.classList.add('mobile-hidden');
+                }
+            });
+        }
     }
 
     update(gameState) {
@@ -134,14 +155,31 @@ export class UI {
 
     updatePlayerStats(player) {
         if (!player) return; // Safeguard against state corruption
-        this.hpElement.textContent = player.hp;
-        this.maxHpElement.textContent = player.maxHp;
-        this.attackElement.textContent = player.attack;
+        if (this.hpElement) this.hpElement.textContent = player.hp;
+        if (this.maxHpElement) this.maxHpElement.textContent = player.maxHp;
+        if (this.attackElement) this.attackElement.textContent = player.attack;
         if (this.goldElement) this.goldElement.textContent = player.stats.gold || 0;
     }
 
     log(message) {
-        this.messageElement.textContent = message || "";
+        if (!this.messageElement || !message) return;
+        
+        // If message is the same, don't restart the toast unless it's hidden
+        if (this.messageElement.textContent === message && !this.messageElement.classList.contains('toast-fade-out')) {
+            return;
+        }
+
+        this.messageElement.textContent = message;
+        this.messageElement.classList.remove('toast-fade-out');
+
+        if (this.messageTimeout) {
+            clearTimeout(this.messageTimeout);
+        }
+
+        this.messageTimeout = setTimeout(() => {
+            this.messageElement.classList.add('toast-fade-out');
+            this.messageTimeout = null;
+        }, 3500); // 3.5 seconds visibility
     }
 
     bindEvents() {

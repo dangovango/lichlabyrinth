@@ -287,20 +287,61 @@ const RootComponent = () => {
 
   const renderGameUI = () => (
     <>
-      <div id="left-column">
-        <div id="player-stats-panel">
-          <div className="flex justify-between items-center mb-2">
-            <h2>PLAYER</h2>
-            <button onClick={() => setShowSettings(true)} className="settings-btn" title="Settings">⚙️</button>
+      {/* Unified Top HUD */}
+      <div id="mobile-hud">
+        <div className="hud-stat-group">
+          <div className="hud-stat-item" title="Health">
+            <span className="hud-icon">❤️</span>
+            <span id="player-hp">--</span>/<span id="player-max-hp">--</span>
           </div>
-          <div id="stats-content">
-            <p>HP: <span id="player-hp">--</span> / <span id="player-max-hp">--</span></p>
-            <p>Actions: <span id="player-ap">--</span> / <span id="player-ap-total">--</span></p>
-            <p>Attack: <span id="player-attack">--</span></p>
-            <p>Gold: <span id="player-gold">--</span></p>
+          <div className="hud-stat-item" title="Actions">
+            <span className="hud-icon">⚡</span>
+            <span id="player-ap">--</span>/<span id="player-ap-total">--</span>
+          </div>
+          <div className="hud-stat-item" title="Attack">
+            <span className="hud-icon">⚔️</span>
+            <span id="player-attack">--</span>
+          </div>
+          <div className="hud-stat-item" title="Gold">
+            <span className="hud-icon">💰</span>
+            <span id="player-gold">--</span>
           </div>
         </div>
         
+        <div id="torch-gauge-container">
+          <div id="torch-gauge-hud">
+            <div id="torch-gauge-fill"></div>
+            <span id="torch-gauge-text"></span>
+          </div>
+        </div>
+
+        <button onClick={() => setShowSettings(true)} className="hud-settings-btn">⚙️</button>
+      </div>
+
+      <div id="game-main-area">
+        <h1 id="room-name">Loading...</h1>
+        
+        <div id="canvas-container">
+          <canvas id="game-canvas"></canvas>
+          
+          {/* Ephemeral Toast Messages */}
+          <div id="toast-container">
+            <p id="log-message">Preparing dungeon...</p>
+          </div>
+
+          {/* Collapsible Objectives Icon */}
+          <div id="objectives-mini-trigger" title="Objectives">🏆</div>
+          <div id="objectives-panel" className="mobile-hidden">
+            <h2>OBJECTIVES</h2>
+            <div id="objectives-content"></div>
+          </div>
+        </div>
+        
+        <h2 id="quest-name">--</h2>
+      </div>
+
+      {/* Ergonomic Floating Controls */}
+      <div className="mobile-controls-row">
         <div id="movement-section">
           <div id="movement-controls">
             <button id="move-up" className="move-btn d-pad-up"><span>↑</span></button>
@@ -309,41 +350,18 @@ const RootComponent = () => {
             <button id="move-down" className="move-btn d-pad-down"><span>↓</span></button>
           </div>
         </div>
-      </div>
-
-      <div id="center-column">
-        <h1 id="room-name">Loading...</h1>
-        <div id="canvas-container">
-          <canvas id="game-canvas"></canvas>
-          <div id="torch-gauge-hud">
-            <div id="torch-gauge-fill"></div>
-            <span id="torch-gauge-text"></span>
-          </div>
-          <div id="message-log-overlay">
-            <p id="log-message">Preparing dungeon...</p>
-          </div>
-        </div>
-        <h2 id="quest-name">--</h2>
-      </div>
-
-      <div id="right-column">
-        <div id="objectives-panel">
-          <h2>OBJECTIVES</h2>
-          <div id="objectives-content">
-            <div className="objective-item">
-              <div className="objective-bullet"></div>
-              <span>Initializing goals...</span>
-            </div>
-          </div>
-        </div>
 
         <div id="primary-action-section">
           <button id="action-button" className="primary-action-btn">Action</button>
-          <div className="control-hint">
+          <div className="control-hint desktop-only">
             Press <span className="key-cap">Space Bar</span> or <span className="key-cap">Enter</span>
           </div>
         </div>
       </div>
+
+      {/* Hidden legacy columns for compatibility with existing scripts if needed */}
+      <div id="left-column"></div>
+      <div id="right-column"></div>
     </>
   );
 

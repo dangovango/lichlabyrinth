@@ -19,7 +19,9 @@ export function executeMove(gameState, dx, dy) {
     newGameState.player.position.y += dy;
     newGameState.turn.ap -= ACTION_COSTS.MOVE;
     newGameState.turn.squaresMovedThisTurn += 1;
-    newGameState.message = `You move.`;
+
+    // Add movement visual effect
+    newGameState.visualEffects.push(createVisualEffect('moveRipple', 'hero', null, { ...newGameState.player.position }));
 
     // Update discovery (Fog of War)
     const discoveryRadius = 2;
